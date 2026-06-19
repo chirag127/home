@@ -1,89 +1,242 @@
 ---
-import { SITES } from '~/lib/sites'
-const year = new Date().getFullYear()
+/*
+ * Footer — band 4 of the broadsheet. Hairline-ruled 4-column sitemap +
+ * mono colophon line with deploy timestamp + git SHA.
+ *
+ * The footer IS the sitemap. There is no separate /sitemap page (the
+ * /sites page exists as a category-grouped read, not as a redundant URL
+ * dump). Every link to every sub-site lives here, plus meta routes.
+ *
+ * DEPLOY metadata: read at build time from env vars set by GitHub Actions
+ * matrix-deploy workflow:
+ *   PUBLIC_DEPLOY_TIME — ISO-8601 UTC timestamp
+ *   PUBLIC_GIT_SHA     — short commit SHA (7 chars)
+ * Falls back to build-time `new Date()` and 'dev' when env is absent.
+ *
+ * Family-anchor pattern: sister sites copy this skeleton verbatim. The
+ * 4 columns (read / make / track / meta) are stable across all sites.
+ */
+import { FAMILY_SITES } from '~/lib/family'
+
+/*
+ * Map FAMILY_SITES categories → broadsheet column groupings.
+ * Read = reading.       (blog, books, book-lore)
+ * Make = tools.         (cards, urls-to-md, image-tools, pdf-tools)
+ * Track = finance.      (cards, finance) — cards lives here per the brief
+ * Meta = personal.      (home, me, journal)
+ *
+ * Note the categorization here differs from oriz-home.md band 3 (READ /
+ * WRITE / MAKE / TOOL / TRACK / META) — the brief distinguishes 6
+ * mini-categories for the index table, but the footer collapses them to 4
+ * columns for the sitemap. The 6→4 collapse is intentional (more dense
+ * sitemap, more readable index).
+ */
+const grouped: Record<'Read' | 'Make' | 'Track' | 'Meta', typeof FAMILY_SITES> = {
+  Read: [],
+  Make: [],
+  Track: [],
+  Meta: [],
+}
+for (const site of FAMILY_SITES) {
+  if (site.category === 'reading') grouped.Read.push(site)
+  else if (site.category === 'tools') grouped.Make.push(site)
+  else if (site.category === 'finance') grouped.Track.push(site)
+  else grouped.Meta.push(site)
+}
+
+const metaRoutes = [
+  { label: 'About', href: '/about/' },
+  { label: 'Sites', href: '/sites/' },
+  { label: 'Contact', href: '/contact/' },
+  { label: 'Privacy', href: '/legal/privacy/' },
+  { label: 'Terms', href: '/legal/terms/' },
+  { label: 'Cookies', href: '/legal/cookies/' },
+  { label: 'Disclaimer', href: '/legal/disclaimer/' },
+  { label: 'Grievance', href: '/legal/grievance/' },
+]
+
+const deployTime =
+  import.meta.env.PUBLIC_DEPLOY_TIME ?? new Date().toISOString().slice(0, 16).replace('T', ' ')
+const gitSha = import.meta.env.PUBLIC_GIT_SHA ?? 'dev'
 ---
 
-<footer class="site-footer">
-  <div class="container-page footer-inner">
-    <div class="footer-col">
-      <p class="footer-brand">oriz</p>
-      <p class="footer-tag">
-        Tools, books, and writing by <a href="/about/">Chirag Singhal</a>.
-      </p>
-    </div>
-
-    <div class="footer-col">
-      <h2 class="footer-h">Family</h2>
-      <ul class="footer-links">
-        {SITES.map((s) => (
-          <li><a href={s.url}>{s.name}</a></li>
-        ))}
+<footer class="footer">
+  <hr class="hairline" />
+  <div class="spine footer-grid">
+    <div class="col">
+      <h2 class="col-h mono">Read</h2>
+      <ul>
+        {
+          grouped.Read.map((s) => (
+            <li>
+              <a href={s.url}>{s.name}</a>
+            </li>
+          ))
+        }
       </ul>
     </div>
-
-    <div class="footer-col">
-      <h2 class="footer-h">Site</h2>
-      <ul class="footer-links">
-        <li><a href="/sites/">All sites</a></li>
-        <li><a href="/about/">About</a></li>
-        <li><a href="/contact/">Contact</a></li>
+    <div class="col">
+      <h2 class="col-h mono">Make</h2>
+      <ul>
+        {
+          grouped.Make.map((s) => (
+            <li>
+              <a href={s.url}>{s.name}</a>
+            </li>
+          ))
+        }
       </ul>
     </div>
-
-    <div class="footer-col">
-      <h2 class="footer-h">Legal</h2>
-      <ul class="footer-links">
-        <li><a href="/legal/privacy/">Privacy</a></li>
-        <li><a href="/legal/terms/">Terms</a></li>
-        <li><a href="/legal/disclaimer/">Disclaimer</a></li>
-        <li><a href="/legal/cookies/">Cookies</a></li>
-        <li><a href="/legal/grievance/">Grievance officer</a></li>
+    <div class="col">
+      <h2 class="col-h mono">Track</h2>
+      <ul>
+        {
+          grouped.Track.map((s) => (
+            <li>
+              <a href={s.url}>{s.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="col col-meta">
+      <h2 class="col-h mono">Meta</h2>
+      <ul>
+        {
+          grouped.Meta.map((s) => (
+            <li>
+              <a href={s.url}>{s.name}</a>
+            </li>
+          ))
+        }
+        {
+          metaRoutes.map((r) => (
+            <li>
+              <a href={r.href} class="route">
+                {r.label}
+              </a>
+            </li>
+          ))
+        }
       </ul>
     </div>
   </div>
-
-  <div class="container-page footer-bottom">
-    <p>&copy; {year} Chirag Singhal. All sites built with <a href="https://github.com/chirag127/oriz">oriz</a>.</p>
+  <hr class="hairline" />
+  <div class="spine colophon">
+    <p class="colophon-line mono">
+      Built with Astro · Firebase · @chirag127/auth-ui · @chirag127/contact-form
+    </p>
+    <p class="colophon-line mono">
+      Deployed <time datetime={deployTime}>{deployTime}</time> UTC · commit
+      <code>{gitSha}</code>
+    </p>
   </div>
 </footer>
 
 <style>
-  .site-footer {
+  .footer {
     margin-top: 6rem;
-    padding-block: 3rem 1.5rem;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-soft);
   }
-  .footer-inner {
+  .footer-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding-block: 2rem;
   }
-  @media (min-width: 640px) { .footer-inner { grid-template-columns: repeat(2, 1fr); } }
-  @media (min-width: 1024px) { .footer-inner { grid-template-columns: 2fr 1fr 1fr 1fr; } }
-  .footer-brand {
-    font-family: var(--font-serif);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem;
+  .col {
+    padding-inline: 1rem;
+    border-right: 1px solid var(--rule);
   }
-  .footer-tag { color: var(--color-fg-muted); margin: 0; max-width: 36ch; }
-  .footer-h {
-    font-size: 0.75rem;
+  .col:first-child {
+    padding-left: 0;
+  }
+  .col:last-child {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .col-h {
+    font-family: var(--font-mono);
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-fg-muted);
-    margin: 0 0 0.75rem;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+    font-weight: 500;
+    margin: 0 0 0.875rem;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
   }
-  .footer-links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-  .footer-links a { color: var(--color-fg-muted); text-decoration: none; font-size: 0.9375rem; }
-  .footer-links a:hover { color: var(--color-fg); }
-  .footer-bottom {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--color-border);
-    color: var(--color-fg-soft);
-    font-size: 0.8125rem;
+  .col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
-  .footer-bottom p { margin: 0; }
+  .col a {
+    color: var(--ink);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    text-decoration: none;
+  }
+  .col a:hover {
+    color: var(--mustard);
+  }
+  .col a:focus-visible {
+    outline: 2px solid var(--mustard);
+    outline-offset: 2px;
+  }
+  .col a.route {
+    color: var(--ink-mute);
+    font-size: 0.875rem;
+  }
+  .col a.route:hover {
+    color: var(--mustard);
+  }
+
+  .colophon {
+    padding-block: 1.5rem 2.5rem;
+  }
+  .colophon-line {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
+  }
+  .colophon code {
+    font-family: var(--font-mono);
+    color: var(--ink);
+  }
+
+  /* Stack to 2 cols on tablets, 1 col on phones. */
+  @media (max-width: 768px) {
+    .footer-grid {
+      grid-template-columns: repeat(2, 1fr);
+      row-gap: 2rem;
+    }
+    .col:nth-child(2n) {
+      border-right: 0;
+      padding-right: 0;
+    }
+    .col:nth-child(2n + 1) {
+      padding-left: 0;
+    }
+  }
+  @media (max-width: 480px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+    .col {
+      border-right: 0;
+      padding: 0;
+    }
+  }
 </style>

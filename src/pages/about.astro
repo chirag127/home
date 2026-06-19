@@ -1,5 +1,42 @@
 ---
+/*
+ * /about — Chirag bio + the seven engineering principles.
+ *
+ * Single broadsheet column. Numbered principle list ties to the index
+ * page's numbered TOC pattern (the `01–11` numerals are a family motif).
+ */
 import BaseLayout from '~/layouts/BaseLayout.astro'
+
+const PRINCIPLES = [
+  {
+    title: 'Static first',
+    body: 'Every site is a static build. No backend to scale, no server to pay for, no 3am page. Where state is needed it talks to Firebase from the browser, on the free tier.',
+  },
+  {
+    title: 'Privacy by default',
+    body: "No tracking beyond Cloudflare's anonymous first-party analytics. Journal entries are end-to-end encrypted. PDF and image tools never upload — they run in your browser.",
+  },
+  {
+    title: 'Free, no paywall',
+    body: 'Display ads on a few sites cover the domain renewal. There is no pro tier, no upsell, no gated feature. If a site is useful, that is enough.',
+  },
+  {
+    title: 'Owned, not rented',
+    body: 'I own the content, the code, and the domain. Every site lives in its own GitHub repository under chirag127/oriz-*. If a hosting provider disappears, the data is mine.',
+  },
+  {
+    title: 'Small surface',
+    body: 'Eleven small sites, each with one job. The shared sign-in works across them. The shared design system means you only learn the controls once.',
+  },
+  {
+    title: 'Long horizon',
+    body: 'A 100-year operating plan: git is canonical, cloud caches are secondary. If everything else fails, a public JSONL mirror on GitHub Pages is the fallback.',
+  },
+  {
+    title: 'Quiet',
+    body: 'No popups. No newsletters you didn\'t ask for. No "would you like to enable notifications" prompts. The web is loud enough.',
+  },
+] as const
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -7,9 +44,19 @@ const jsonLd = {
   name: 'Chirag Singhal',
   url: 'https://oriz.in/about/',
   jobTitle: 'Software Engineer',
-  description: 'Software engineer specializing in scalable backend architectures, full-stack development, AI agents, and cloud-native deployments.',
-  address: { '@type': 'PostalAddress', addressLocality: 'Bhubaneswar', addressRegion: 'Odisha', addressCountry: 'IN' },
-  sameAs: ['https://github.com/chirag127', 'https://x.com/chirag127', 'https://linkedin.com/in/chirag127'],
+  description:
+    'Software engineer specializing in scalable backend architectures, full-stack development, AI agents, and cloud-native deployments.',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Bhubaneswar',
+    addressRegion: 'Odisha',
+    addressCountry: 'IN',
+  },
+  sameAs: [
+    'https://github.com/chirag127',
+    'https://x.com/chirag127',
+    'https://linkedin.com/in/chirag127',
+  ],
 }
 ---
 
@@ -17,63 +64,102 @@ const jsonLd = {
   title="About — Chirag Singhal"
   description="Software engineer based in Bhubaneswar. Builder of the oriz family of sites."
   jsonLd={jsonLd}
+  wordmarkSubtitle="about"
 >
-  <header class="container-prose page-head">
-    <p class="eyebrow"><a href="/">oriz</a> / About</p>
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / about</p>
     <h1>About</h1>
+    <p class="lede">
+      Chirag Singhal — software engineer, Bhubaneswar. Builder of the oriz family.
+    </p>
   </header>
 
-  <article class="container-prose prose">
+  <article class="spine prose">
     <p class="lede">
-      I am Chirag Singhal — a software engineer based in Bhubaneswar, Odisha.
-      I build small, fast, free things on the open web.
+      I am Chirag Singhal — a software engineer based in Bhubaneswar, Odisha. I build small, fast,
+      free things on the open web.
     </p>
 
     <h2>What is oriz</h2>
     <p>
-      <strong>oriz</strong> is the umbrella for everything I publish — a family
-      of static sites that share a sign-in, a design system, and a single
-      principle: <em>useful, free, and quiet</em>. No newsletters you didn't
-      ask for. No popups. No paid tier. No tracking beyond Cloudflare's
-      first-party analytics.
-    </p>
-    <p>
-      Each site is its own GitHub repository. They are stitched together
-      through <a href="https://github.com/chirag127/oriz">chirag127/oriz</a>,
-      a hub that holds them as git submodules. Hosting is split between
-      Cloudflare (for static reading sites) and Firebase (for app-like sites
-      with auth and a database). Display ads on a few of them cover the domain
+      <strong>oriz</strong> is the umbrella for everything I publish — a family of static sites that
+      share a sign-in, a design system, and a single principle:{' '}
+      <em>useful, free, and quiet</em>. Each site is its own GitHub repository, stitched together
+      through{' '}
+      <a href="https://github.com/chirag127/oriz">chirag127/oriz</a>, a hub that holds them as git
+      submodules. Hosting is split between Cloudflare (for static reading sites) and Firebase (for
+      app-like sites with auth and a database). Display ads on a few of them cover the domain
       renewal.
     </p>
 
-    <h2>What I do</h2>
+    <h2>Seven principles</h2>
+    <ol class="principles">
+      {
+        PRINCIPLES.map((p, i) => (
+          <li class="principle">
+            <span class="num mono">{String(i + 1).padStart(2, '0')}</span>
+            <div class="meat">
+              <h3>{p.title}</h3>
+              <p>{p.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <h2>Day job</h2>
     <p>
-      Day job: backend systems, distributed databases, and cloud platforms.
-      Off-hours: writing, building these tools, reading.
-    </p>
-    <p>
-      If something on oriz is useful to you, that is enough. If you find a
-      bug, the issue tracker is at
-      <a href="https://github.com/chirag127">github.com/chirag127</a>.
+      Backend systems, distributed databases, cloud platforms. Off-hours: writing, building these
+      tools, reading. If something on oriz is useful to you, that is enough.
     </p>
 
     <h2>Contact</h2>
     <p>
-      Email: <a href="mailto:whyiswhen@gmail.com">whyiswhen@gmail.com</a>.
-      Or use the <a href="/contact/">contact form</a> for anything site-related.
+      Email: <a href="mailto:whyiswhen@gmail.com">whyiswhen@gmail.com</a>. Use the{' '}
+      <a href="/contact/">contact form</a> for anything site-related — typo, broken link,
+      suggestion. For privacy questions or DMCA notices, the{' '}
+      <a href="/legal/grievance/">grievance officer</a> page is the formal channel (mandatory under
+      IT Rules 2021).
     </p>
   </article>
 </BaseLayout>
 
 <style>
-  .page-head { padding-block: 3rem 1.5rem; border-bottom: 1px solid var(--color-border); }
-  .eyebrow { color: var(--color-fg-muted); font-size: 0.8125rem; margin: 0 0 0.5rem; }
-  .eyebrow a { color: var(--color-fg-muted); text-decoration: none; }
-  .eyebrow a:hover { color: var(--color-fg); }
-  h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
-  .prose { padding-block: 2.5rem 4rem; color: var(--color-prose); line-height: 1.75; font-size: 1.0625rem; }
-  .prose .lede { font-size: 1.1875rem; color: var(--color-fg); margin: 0 0 2rem; }
-  .prose h2 { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; color: var(--color-fg); margin: 2.5rem 0 1rem; }
-  .prose p { margin: 0 0 1.25rem; }
-  .prose a { color: var(--color-accent); }
+  .principles {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    border-top: 1px solid var(--rule);
+  }
+  .principle {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 1rem;
+    padding-block: 1.25rem;
+    border-bottom: 1px solid var(--rule);
+    margin: 0;
+  }
+  .principle .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-mute);
+    padding-top: 0.4rem;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
+  }
+  .principle .meat h3 {
+    margin: 0 0 0.375rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1875rem;
+    color: var(--ink);
+  }
+  .principle .meat p {
+    margin: 0;
+    color: color-mix(in oklab, var(--ink) 88%, var(--paper));
+    line-height: 1.6;
+    font-size: 1rem;
+  }
 </style>

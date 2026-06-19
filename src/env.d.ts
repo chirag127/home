@@ -11,6 +11,11 @@ interface ImportMetaEnv {
   readonly PUBLIC_BUTTONDOWN_USERNAME?: string
   readonly PUBLIC_GA4_ID?: string
   readonly PUBLIC_ADSENSE_CLIENT?: string
+  readonly PUBLIC_WEB3FORMS_KEY?: string
+  /** Set by GitHub Actions matrix-deploy at build time. ISO-8601 UTC. */
+  readonly PUBLIC_DEPLOY_TIME?: string
+  /** Set by GitHub Actions matrix-deploy at build time. Short SHA. */
+  readonly PUBLIC_GIT_SHA?: string
 }
 
 interface ImportMeta {

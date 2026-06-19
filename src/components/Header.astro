@@ -1,63 +1,104 @@
 ---
-import HeaderControls from '~/components/HeaderControls.tsx'
-import { SITES } from '~/lib/sites'
+/*
+ * Header — band 1 of the broadsheet. 56px tall, hairline above + below.
+ *
+ * Layout (matches design-briefs/oriz-home.md band 1):
+ *   ─── hairline rule ────────────────────────────────────────────────
+ *   ORIZ · ALMANAC          NO. 011 · JUN 2026 · CHIRAG SINGHAL
+ *   ─── hairline rule ────────────────────────────────────────────────
+ *   sign in                                            (right-aligned)
+ *
+ * NO nav links — sub-sites are reachable only through the index page.
+ * The lone affordance is the underlined `sign in` word at the far right.
+ *
+ * Family-anchor pattern: every site has its OWN header (per family rules).
+ * Sister sites copy this skeleton and substitute their own NO. + section
+ * label (e.g. "ORIZ · BLOG", "ORIZ · BOOKS").
+ */
+import { FAMILY_SITES } from '~/lib/family'
+
+interface Props {
+  /** Section name shown after `ORIZ ·`. Defaults to 'ALMANAC' (the home almanac). */
+  sectionLabel?: string
+  /** Subtitle for the wordmark (used on non-home pages). NOT rendered in this header — the wordmark lives in band 2 on the index. */
+  wordmarkSubtitle?: string
+}
+
+const { sectionLabel = 'ALMANAC' } = Astro.props
+
+const ISSUE_NO = String(FAMILY_SITES.length).padStart(3, '0')
+const month = new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
 ---
 
-<header class="site-header">
-  <div class="container-page header-inner">
-    <a href="/" class="brand">
-      <span class="brand-mark">oriz</span>
-      <span class="brand-dot">.</span>
-    </a>
-
-    <nav aria-label="Primary" class="primary-nav">
-      <a href="/sites/">Sites</a>
-      <a href="/about/">About</a>
-      <a href="/contact/">Contact</a>
-    </nav>
-
-    <HeaderControls client:idle sites={SITES} />
+<header class="header">
+  <hr class="hairline" />
+  <div class="spine header-row header-meta">
+    <span class="meta-left mono">ORIZ · {sectionLabel}</span>
+    <span class="meta-right mono">NO. {ISSUE_NO} · {month} · CHIRAG SINGHAL</span>
+  </div>
+  <hr class="hairline" />
+  <div class="spine header-row header-sign">
+    <a href="/account/" class="sign-in">sign in</a>
   </div>
 </header>
 
 <style>
-  .site-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: color-mix(in oklab, var(--color-bg) 85%, transparent);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid var(--color-border);
+  .header {
+    position: relative;
+    /* The header is intentionally NOT sticky — broadsheet pages don't have
+       sticky chrome. The page is short enough. */
   }
-  .header-inner {
-    height: 64px;
+  .header-row {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    height: 28px; /* 28 + 28 = 56 total */
   }
-  .brand {
-    font-family: var(--font-serif);
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    text-decoration: none;
-    color: var(--color-fg);
-    line-height: 1;
+  .header-meta {
+    justify-content: space-between;
+    gap: 1rem;
   }
-  .brand-dot { color: var(--color-accent); }
-  .primary-nav {
-    display: none;
-    gap: 1.5rem;
-    flex: 1;
-    font-size: 0.9375rem;
+  .header-sign {
+    justify-content: flex-end;
   }
-  .primary-nav a {
-    color: var(--color-fg-muted);
-    text-decoration: none;
+  .meta-left,
+  .meta-right {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-mute);
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
   }
-  .primary-nav a:hover { color: var(--color-fg); }
-  @media (min-width: 768px) {
-    .primary-nav { display: flex; }
+  .meta-right {
+    text-align: right;
+  }
+  .sign-in {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--ink-mute);
+  }
+  .sign-in:hover {
+    color: var(--mustard);
+    text-decoration-color: var(--mustard);
+  }
+  .sign-in:focus-visible {
+    outline: 2px solid var(--mustard);
+    outline-offset: 2px;
+    text-decoration-color: var(--mustard);
+  }
+
+  /* Drop the hairline collapse on small screens — keep the strip 56px. */
+  @media (max-width: 480px) {
+    .meta-right {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
   }
 </style>

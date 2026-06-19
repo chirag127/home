@@ -2,7 +2,11 @@
 import BaseLayout from '~/layouts/BaseLayout.astro'
 
 const sections = [
-  { slug: 'privacy', label: 'Privacy policy', desc: 'What we collect, what we don\'t, your rights.' },
+  {
+    slug: 'privacy',
+    label: 'Privacy policy',
+    desc: "What we collect, what we don't, your rights.",
+  },
   { slug: 'terms', label: 'Terms of use', desc: 'The rules for using oriz.in.' },
   { slug: 'disclaimer', label: 'Disclaimer', desc: 'Not financial / medical / legal advice.' },
   { slug: 'cookies', label: 'Cookie policy', desc: 'What cookies and localStorage we set.' },
@@ -10,45 +14,98 @@ const sections = [
 ]
 ---
 
-<BaseLayout title="Legal — oriz" description="Privacy, terms, and grievance contact for oriz.in.">
-  <header class="container-prose page-head">
-    <p class="eyebrow"><a href="/">oriz</a> / Legal</p>
+<BaseLayout
+  title="Legal — oriz"
+  description="Privacy, terms, and grievance contact for oriz.in."
+  wordmarkSubtitle="legal"
+>
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / legal</p>
     <h1>Legal</h1>
   </header>
 
-  <section class="container-prose section">
-    <ul class="legal-list">
-      {sections.map((s) => (
-        <li>
-          <a href={`/legal/${s.slug}/`} class="card">
-            <h2>{s.label}</h2>
-            <p>{s.desc}</p>
-            <span class="arrow" aria-hidden="true">→</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+  <section class="spine legal-section">
+    <ol class="index-list">
+      {
+        sections.map((s, i) => (
+          <li class="index-row-wrap">
+            <a class="index-row" href={`/legal/${s.slug}/`}>
+              <span class="num mono">{String(i + 1).padStart(2, '0')}</span>
+              <span class="meat">
+                <span class="name display">{s.label}</span>
+                <span class="desc">{s.desc}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
   </section>
 </BaseLayout>
 
 <style>
-  .page-head { padding-block: 3rem 1.5rem; border-bottom: 1px solid var(--color-border); }
-  .eyebrow { color: var(--color-fg-muted); font-size: 0.8125rem; margin: 0 0 0.5rem; }
-  .eyebrow a { color: var(--color-fg-muted); text-decoration: none; }
-  h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
-  .section { padding-block: 2.5rem 4rem; }
-  .legal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem; }
-  .card {
-    display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;
-    padding: 1.25rem 1.5rem;
-    background: var(--color-bg-soft);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    color: var(--color-fg); text-decoration: none;
+  .legal-section {
+    padding-block: 2.5rem 5rem;
   }
-  .card:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); color: var(--color-fg); }
-  .card h2 { font-family: var(--font-serif); font-size: 1.125rem; font-weight: 600; margin: 0 0 0.25rem; }
-  .card p { color: var(--color-fg-muted); margin: 0; font-size: 0.9375rem; }
-  .arrow { color: var(--color-fg-soft); font-size: 1.125rem; }
-  .card:hover .arrow { color: var(--color-accent); }
+  .index-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .index-row-wrap {
+    border-bottom: 1px solid color-mix(in oklab, var(--ink-mute) 20%, transparent);
+  }
+  .index-row-wrap:last-child {
+    border-bottom: 0;
+  }
+  .index-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 1rem;
+    align-items: center;
+    min-height: 64px;
+    padding-block: 0.875rem;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .index-row .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-mute);
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
+  }
+  .index-row .meat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .index-row .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+  .index-row .desc {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+  .index-row:hover {
+    box-shadow: inset 0 -1px 0 var(--mustard);
+  }
+  .index-row:hover .num {
+    color: var(--mustard);
+  }
+  .index-row:focus-visible {
+    outline: none;
+    background: color-mix(in oklab, var(--highlighter) 30%, transparent);
+    box-shadow: inset 0 -1px 0 var(--mustard);
+  }
+  .index-row:focus-visible .num {
+    color: var(--mustard);
+  }
 </style>

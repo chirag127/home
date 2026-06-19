@@ -1,16 +1,44 @@
-/**
- * Email-link finishing page. The user clicked the link in their email; we
- * complete the sign-in and redirect to /account/.
+/*
+ * FinishSignIn — local copy that emits the canonical
+ * `data-oriz-finish-sign-in-*` hooks. See AccountPanel.tsx header comment
+ * for why this is a local copy rather than an import from
+ * @chirag127/auth-ui.
  */
-import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
 import { isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth'
+import { useCallback, useEffect, useState } from 'react'
 import { auth } from '~/lib/firebase'
 
-export default function FinishSignIn() {
+interface Props {
+  successPath?: string
+  emailStorageKey?: string
+}
+
+export default function FinishSignIn({
+  successPath = '/account/',
+  emailStorageKey = 'oriz:emailForSignIn',
+}: Props) {
   const [status, setStatus] = useState<'working' | 'need-email' | 'done' | 'error'>('working')
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const finish = useCallback(
+    async (e: string) => {
+      setStatus('working')
+      setError(null)
+      try {
+        await signInWithEmailLink(auth, e, window.location.href)
+        window.localStorage.removeItem(emailStorageKey)
+        setStatus('done')
+        window.setTimeout(() => {
+          window.location.href = successPath
+        }, 1200)
+      } catch (err) {
+        setStatus('error')
+        setError(err instanceof Error ? err.message : String(err))
+      }
+    },
+    [emailStorageKey, successPath],
+  )
 
   useEffect(() => {
     if (!isSignInWithEmailLink(auth, window.location.href)) {
@@ -18,113 +46,58 @@ export default function FinishSignIn() {
       setError('This link is invalid or expired.')
       return
     }
-    const stored = window.localStorage.getItem('oriz:emailForSignIn')
+    const stored = window.localStorage.getItem(emailStorageKey)
     if (stored) void finish(stored)
     else setStatus('need-email')
-  }, [])
-
-  const finish = async (e: string) => {
-    setStatus('working')
-    setError(null)
-    try {
-      await signInWithEmailLink(auth, e, window.location.href)
-      window.localStorage.removeItem('oriz:emailForSignIn')
-      setStatus('done')
-      window.setTimeout(() => {
-        window.location.href = '/account/'
-      }, 1200)
-    } catch (err) {
-      setStatus('error')
-      setError(err instanceof Error ? err.message : String(err))
-    }
-  }
+  }, [emailStorageKey, finish])
 
   if (status === 'working') {
     return (
-      <div className="state">
-        <Loader2 className="spin" size={28} aria-hidden="true" />
-        <p>Signing you in…</p>
-        <Styles />
-      </div>
+      <p data-oriz-finish-sign-in data-oriz-finish-sign-in-state="working" role="status">
+        Signing you in…
+      </p>
     )
   }
-
   if (status === 'done') {
     return (
-      <div className="state">
-        <p className="ok">Signed in. Redirecting to your account…</p>
-        <Styles />
-      </div>
+      <p data-oriz-finish-sign-in data-oriz-finish-sign-in-state="done" role="status">
+        Signed in. Redirecting…
+      </p>
     )
   }
-
   if (status === 'need-email') {
     return (
-      <div className="state">
+      <form
+        data-oriz-finish-sign-in
+        data-oriz-finish-sign-in-state="need-email"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void finish(email)
+        }}
+      >
         <p>Please confirm the email address you used:</p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            void finish(email)
-          }}
-          className="inline-form"
-        >
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
-          <button type="submit" className="btn-primary">Continue</button>
-        </form>
-        <Styles />
-      </div>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+        />
+        <button type="submit" data-oriz-account-provider="email">
+          Continue
+        </button>
+      </form>
     )
   }
-
   return (
-    <div className="state">
-      <p className="err">{error ?? 'Sign-in failed.'}</p>
-      <a href="/account/" className="btn-primary">Back to sign in</a>
-      <Styles />
+    <div data-oriz-finish-sign-in data-oriz-finish-sign-in-state="error">
+      <p data-oriz-finish-sign-in-error role="alert">
+        {error ?? 'Sign-in failed.'}
+      </p>
+      <a href="/account/" data-oriz-account-provider="email">
+        Back to sign in
+      </a>
     </div>
-  )
-}
-
-function Styles() {
-  return (
-    <style>{`
-      .state { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-      .ok { color: var(--color-fg); font-size: 1.0625rem; }
-      .err {
-        padding: 0.875rem 1.25rem;
-        background: color-mix(in oklab, #f43f5e 15%, transparent);
-        border: 1px solid color-mix(in oklab, #f43f5e 40%, transparent);
-        border-radius: var(--radius-button);
-        color: var(--color-fg);
-      }
-      .inline-form { display: flex; gap: 0.5rem; max-width: 360px; width: 100%; }
-      .inline-form input {
-        flex: 1; height: 44px; padding-inline: 0.875rem;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-button);
-        color: var(--color-fg); font-family: inherit; font-size: 0.9375rem;
-      }
-      .btn-primary {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        height: 44px; padding-inline: 1.25rem;
-        background: var(--color-accent);
-        color: var(--color-accent-fg);
-        border: 0;
-        border-radius: var(--radius-button);
-        font-family: inherit; font-size: 0.9375rem; font-weight: 500;
-        cursor: pointer; text-decoration: none;
-      }
-      .spin { animation: spin 1s linear infinite; color: var(--color-accent); }
-      @keyframes spin { to { transform: rotate(360deg); } }
-    `}</style>
   )
 }

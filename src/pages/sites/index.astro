@@ -1,76 +1,198 @@
 ---
+/*
+ * /sites — full sites list with category groupings.
+ *
+ * Same broadsheet column. Re-uses the .index-row pattern from index.astro
+ * (deduplicated CSS lives there in :global form, but for now this page
+ * keeps an inline copy — when the second sister site copies this page,
+ * the rules can move to global.css under .index-row).
+ *
+ * Order is by category, then alphabetical within category. Categories:
+ *   READING / WRITING / TOOLS / FINANCE / PERSONAL
+ */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import { CATEGORIES, SITES } from '~/lib/sites'
+import { FAMILY_SITES } from '~/lib/family'
 
-const grouped = SITES.reduce<Record<string, typeof SITES>>((acc, s) => {
-  ;(acc[s.category] ??= []).push(s)
-  return acc
-}, {})
+const CAT_ORDER = ['reading', 'tools', 'finance', 'personal'] as const
+const CAT_LABELS: Record<(typeof CAT_ORDER)[number], string> = {
+  reading: 'READ + WRITE',
+  tools: 'MAKE + TOOLS',
+  finance: 'TRACK',
+  personal: 'META',
+}
+
+const grouped = CAT_ORDER.map((cat) => ({
+  cat,
+  label: CAT_LABELS[cat],
+  sites: FAMILY_SITES.filter((s) => s.category === cat),
+}))
 ---
 
 <BaseLayout
   title="All sites — oriz"
-  description="Every site in the oriz family — books, blog, NCERT, cards, finance, journal, URL-to-Markdown, image tools, PDF tools."
+  description="Every site in the oriz family — books, blog, NCERT, cards, finance, journal, URL-to-Markdown, image tools, PDF tools, datasheet."
+  wordmarkSubtitle="sites"
 >
-  <header class="container-page page-head">
-    <p class="eyebrow"><a href="/">oriz</a> / Sites</p>
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / sites</p>
     <h1>The oriz family</h1>
-    <p class="lede">{SITES.length} sites. One sign-in. All free.</p>
+    <p class="lede">
+      {FAMILY_SITES.length} sites. One sign-in. All free, all open source.
+    </p>
   </header>
 
-  <section class="container-page section">
-    {Object.entries(grouped).map(([cat, sites]) => (
-      <div class="cat">
-        <h2>
-          <span aria-hidden="true">{CATEGORIES[cat as keyof typeof CATEGORIES].emoji}</span>
-          {CATEGORIES[cat as keyof typeof CATEGORIES].label}
-        </h2>
-        <ul class="grid">
-          {sites.map((s) => (
-            <li>
-              <a href={s.url} class="card">
-                <div class="card-head">
-                  <span class="emoji" aria-hidden="true">{s.emoji}</span>
-                  <h3>{s.name}</h3>
-                </div>
-                <p>{s.tagline}</p>
-                <span class="visit">Visit {s.slug}.oriz.in →</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
+  <section class="spine sites-section" aria-label="All sites">
+    {
+      grouped.map((g) => (
+        <div class="cat-block">
+          <h2 class="cat-h mono">{g.label}</h2>
+          <ol class="index-list">
+            {g.sites.map((s) => (
+              <li class="index-row-wrap">
+                <a class="index-row" href={s.url}>
+                  <span class="cat mono">{s.slug}</span>
+                  <span class="meat">
+                    <span class="name display">{s.name}</span>
+                    <span class="desc">{s.tagline}</span>
+                  </span>
+                  <span class="domain mono">{new URL(s.url).host}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
   </section>
 </BaseLayout>
 
 <style>
-  .page-head { padding-block: 3rem 1.5rem; border-bottom: 1px solid var(--color-border); }
-  .eyebrow { color: var(--color-fg-muted); font-size: 0.8125rem; margin: 0 0 0.5rem; }
-  .eyebrow a { color: var(--color-fg-muted); text-decoration: none; }
-  .eyebrow a:hover { color: var(--color-fg); }
-  h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
-  .lede { color: var(--color-fg-muted); margin: 0.75rem 0 0; font-size: 1.0625rem; }
-  .section { padding-block: 3rem 4rem; }
-  .cat { margin-bottom: 3rem; }
-  .cat h2 {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600;
-    margin: 0 0 1rem;
+  .sites-section {
+    padding-block: 2.5rem 5rem;
   }
-  .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-  .card {
-    display: block; padding: 1.5rem;
-    background: var(--color-bg-soft);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    color: var(--color-fg); text-decoration: none;
-    height: 100%;
+  .cat-block {
+    margin-bottom: 2.5rem;
   }
-  .card:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); color: var(--color-fg); }
-  .card-head { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.5rem; }
-  .emoji { font-size: 1.5rem; }
-  .card h3 { font-size: 1.125rem; font-weight: 600; margin: 0; }
-  .card p { color: var(--color-fg-muted); margin: 0 0 1rem; line-height: 1.5; }
-  .visit { color: var(--color-accent); font-size: 0.875rem; font-weight: 500; }
+  .cat-block:last-child {
+    margin-bottom: 0;
+  }
+  .cat-h {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-mute);
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
+  }
+
+  /* Mirror the .index-row pattern from index.astro (3-col on this page —
+     no number column since it's grouped). */
+  .index-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .index-row-wrap {
+    border-bottom: 1px solid color-mix(in oklab, var(--ink-mute) 20%, transparent);
+  }
+  .index-row-wrap:last-child {
+    border-bottom: 0;
+  }
+  .index-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 220px;
+    gap: 1rem;
+    align-items: center;
+    min-height: 56px;
+    padding-block: 0.75rem;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .index-row .cat {
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .index-row .meat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+  .index-row .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+  .index-row .desc {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink-mute);
+    line-height: 1.4;
+  }
+  .index-row .domain {
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-align: right;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1,
+      'calt' 0;
+  }
+
+  /* Monochrome-until-hover — same signature as the home index. */
+  .index-row:hover {
+    box-shadow: inset 0 -1px 0 var(--mustard);
+  }
+  .index-row:hover .cat {
+    color: var(--mustard);
+  }
+  .index-row:hover .domain {
+    color: var(--ledger);
+  }
+  .index-row:focus-visible {
+    outline: none;
+    background: color-mix(in oklab, var(--highlighter) 30%, transparent);
+    box-shadow: inset 0 -1px 0 var(--mustard);
+  }
+  .index-row:focus-visible .cat {
+    color: var(--mustard);
+  }
+  .index-row:focus-visible .domain {
+    color: var(--ledger);
+  }
+
+  @media (max-width: 640px) {
+    .index-row {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'cat'
+        'meat'
+        'domain';
+      row-gap: 0.25rem;
+      padding-block: 0.875rem;
+    }
+    .index-row .cat {
+      grid-area: cat;
+    }
+    .index-row .meat {
+      grid-area: meat;
+    }
+    .index-row .domain {
+      grid-area: domain;
+      text-align: left;
+    }
+  }
 </style>
