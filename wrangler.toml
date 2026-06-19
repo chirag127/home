@@ -1,0 +1,10 @@
+name = "oriz-home"
+compatibility_date = "2026-06-17"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"
+
+# Custom domain bound via dashboard:
+#   oriz.in   -> oriz-home

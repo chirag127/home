@@ -1,0 +1,76 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+import { CATEGORIES, SITES } from '~/lib/sites'
+
+const grouped = SITES.reduce<Record<string, typeof SITES>>((acc, s) => {
+  ;(acc[s.category] ??= []).push(s)
+  return acc
+}, {})
+---
+
+<BaseLayout
+  title="All sites — oriz"
+  description="Every site in the oriz family — books, blog, NCERT, cards, finance, journal, URL-to-Markdown, image tools, PDF tools."
+>
+  <header class="container-page page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / Sites</p>
+    <h1>The oriz family</h1>
+    <p class="lede">{SITES.length} sites. One sign-in. All free.</p>
+  </header>
+
+  <section class="container-page section">
+    {Object.entries(grouped).map(([cat, sites]) => (
+      <div class="cat">
+        <h2>
+          <span aria-hidden="true">{CATEGORIES[cat as keyof typeof CATEGORIES].emoji}</span>
+          {CATEGORIES[cat as keyof typeof CATEGORIES].label}
+        </h2>
+        <ul class="grid">
+          {sites.map((s) => (
+            <li>
+              <a href={s.url} class="card">
+                <div class="card-head">
+                  <span class="emoji" aria-hidden="true">{s.emoji}</span>
+                  <h3>{s.name}</h3>
+                </div>
+                <p>{s.tagline}</p>
+                <span class="visit">Visit {s.slug}.oriz.in →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .page-head { padding-block: 3rem 1.5rem; border-bottom: 1px solid var(--color-border); }
+  .eyebrow { color: var(--color-fg-muted); font-size: 0.8125rem; margin: 0 0 0.5rem; }
+  .eyebrow a { color: var(--color-fg-muted); text-decoration: none; }
+  .eyebrow a:hover { color: var(--color-fg); }
+  h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  .lede { color: var(--color-fg-muted); margin: 0.75rem 0 0; font-size: 1.0625rem; }
+  .section { padding-block: 3rem 4rem; }
+  .cat { margin-bottom: 3rem; }
+  .cat h2 {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600;
+    margin: 0 0 1rem;
+  }
+  .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .card {
+    display: block; padding: 1.5rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    color: var(--color-fg); text-decoration: none;
+    height: 100%;
+  }
+  .card:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); color: var(--color-fg); }
+  .card-head { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.5rem; }
+  .emoji { font-size: 1.5rem; }
+  .card h3 { font-size: 1.125rem; font-weight: 600; margin: 0; }
+  .card p { color: var(--color-fg-muted); margin: 0 0 1rem; line-height: 1.5; }
+  .visit { color: var(--color-accent); font-size: 0.875rem; font-weight: 500; }
+</style>

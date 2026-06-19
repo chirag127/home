@@ -1,0 +1,209 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+import { CATEGORIES, SITES } from '~/lib/sites'
+
+const grouped = SITES.reduce<Record<string, typeof SITES>>((acc, s) => {
+  ;(acc[s.category] ??= []).push(s)
+  return acc
+}, {})
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'oriz',
+  url: 'https://oriz.in',
+  founder: { '@type': 'Person', name: 'Chirag Singhal', url: 'https://oriz.in/about/' },
+  description: 'A free family of static sites: book summaries, NCERT directory, India card intelligence, finance calculators, dev tools, blog, and a privacy-first journal.',
+  sameAs: [
+    'https://github.com/chirag127',
+    'https://x.com/chirag127',
+    'https://linkedin.com/in/chirag127',
+  ],
+  hasPart: SITES.map((s) => ({ '@type': 'WebSite', name: s.name, url: s.url, description: s.tagline })),
+}
+---
+
+<BaseLayout jsonLd={jsonLd}>
+  <section class="hero">
+    <div class="container-page hero-inner">
+      <p class="eyebrow">A free family of sites by Chirag Singhal</p>
+      <h1 class="hero-h">
+        Tools, books, and writing —<br />
+        all under <span class="hero-accent">oriz.in</span>.
+      </h1>
+      <p class="hero-lede">
+        Eight separate sites. One sign-in. Zero cost. Built static, hosted on
+        Cloudflare and Firebase, designed to be fast and quiet.
+      </p>
+      <div class="hero-cta">
+        <a href="/sites/" class="btn btn-primary">Browse all sites →</a>
+        <a href="/about/" class="btn">About oriz</a>
+      </div>
+      <ul class="stats">
+        <li><span class="stat-value">8</span><span class="stat-label">Sites</span></li>
+        <li><span class="stat-value">461</span><span class="stat-label">Books</span></li>
+        <li><span class="stat-value">750</span><span class="stat-label">Cards</span></li>
+        <li><span class="stat-value">492</span><span class="stat-label">Posts</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="container-page section">
+    <h2 class="section-h">The family</h2>
+    <p class="section-lede">
+      Each site stands on its own. They share a sign-in (so your bookmarks
+      and reading history follow you across them) and a design system (so
+      you only learn the controls once).
+    </p>
+
+    {Object.entries(grouped).map(([cat, sites]) => (
+      <div class="cat-block">
+        <h3 class="cat-h">
+          <span class="cat-emoji" aria-hidden="true">{CATEGORIES[cat as keyof typeof CATEGORIES].emoji}</span>
+          {CATEGORIES[cat as keyof typeof CATEGORIES].label}
+        </h3>
+        <ul class="site-grid">
+          {sites.map((s) => (
+            <li>
+              <a href={s.url} class="site-card">
+                <span class="site-emoji" aria-hidden="true">{s.emoji}</span>
+                <span class="site-name">{s.name}</span>
+                <span class="site-tag">{s.tagline}</span>
+                <span class="site-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+
+  <section class="container-page section">
+    <h2 class="section-h">How it stays free</h2>
+    <div class="prose">
+      <p>
+        Every site is a static build deployed to Cloudflare's edge or Firebase
+        Hosting. There is no backend to scale, no server to pay for. When a
+        site does need a database or auth — like the journal — it talks to
+        Firebase directly from the browser. The free tier is enough.
+      </p>
+      <p>
+        Display ads run on a few of these sites to cover the domain renewal.
+        Nothing is gated behind a paywall. There is no &ldquo;pro&rdquo; tier.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: 5rem 4rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .hero-inner { max-width: 720px; margin-inline: auto; text-align: center; }
+  .eyebrow {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    color: var(--color-fg-muted);
+    font-size: 0.75rem;
+    margin: 0 0 1.5rem;
+  }
+  .hero-h {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 1.25rem;
+  }
+  .hero-accent { color: var(--color-accent); }
+  .hero-lede {
+    color: var(--color-fg-muted);
+    font-size: 1.125rem;
+    max-width: 56ch;
+    margin: 0 auto 2rem;
+  }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 3rem; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 44px;
+    padding-inline: 1.25rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    color: var(--color-fg);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .btn:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); color: var(--color-fg); }
+  .btn-primary { background: var(--color-accent); color: var(--color-accent-fg); border-color: var(--color-accent); }
+  .btn-primary:hover { color: var(--color-accent-fg); }
+
+  .stats {
+    list-style: none; padding: 0; margin: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    max-width: 480px; margin-inline: auto;
+  }
+  .stats li { text-align: center; }
+  .stat-value {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+  .stat-label { display: block; font-size: 0.8125rem; color: var(--color-fg-soft); margin-top: 0.25rem; }
+
+  .section { padding-block: 4rem; }
+  .section-h {
+    font-family: var(--font-serif);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  .section-lede { color: var(--color-fg-muted); max-width: 64ch; margin: 0 0 2.5rem; font-size: 1.0625rem; }
+
+  .cat-block { margin-bottom: 3rem; }
+  .cat-h {
+    display: flex; align-items: center; gap: 0.625rem;
+    font-size: 1rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--color-fg-muted);
+    margin: 0 0 1rem;
+  }
+  .cat-emoji { font-size: 1.125rem; }
+  .site-grid {
+    list-style: none; padding: 0; margin: 0;
+    display: grid; gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  .site-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 0.875rem;
+    align-items: start;
+    padding: 1.125rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    color: var(--color-fg);
+    text-decoration: none;
+    transition: transform 120ms, border-color 120ms;
+  }
+  .site-card:hover { transform: translateY(-1px); border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); color: var(--color-fg); }
+  .site-emoji { grid-row: span 2; font-size: 1.5rem; align-self: center; }
+  .site-name { font-weight: 600; font-size: 1.0625rem; }
+  .site-tag { grid-column: 2; color: var(--color-fg-muted); font-size: 0.875rem; line-height: 1.4; }
+  .site-arrow { grid-row: span 2; align-self: center; color: var(--color-fg-soft); }
+  .site-card:hover .site-arrow { color: var(--color-accent); }
+
+  .prose { color: var(--color-prose); max-width: 64ch; line-height: 1.7; }
+  .prose p { margin: 0 0 1.25rem; }
+</style>
