@@ -1,316 +1,473 @@
 ---
-import Wordmark from '~/components/Wordmark.astro'
 /*
- * oriz / home — index page (the broadsheet almanac).
+ * oriz / home — index page (Alphabet-style parent-company landing).
  *
- * Single 920px column. Four bands:
- *   1. Header (already mounted by BaseLayout).
- *   2. Masthead lockup (the hero) — wordmark + manifesto + start-arrow.
- *   3. The Index — numbered TOC table, 11 rows, monochrome-until-hover.
- *   4. Footer (already mounted by BaseLayout) — sitemap + colophon.
+ * Modeled after https://abc.xyz — pure white background, single ~720px
+ * centered column, serif everywhere, no header/footer chrome, plain rows
+ * of subsidiary sites. Replaces the prior broadsheet-almanac aesthetic
+ * because the brief is "look like the parent company landing page".
  *
- * Family-anchor patterns established here:
- *   • The .index-row markup (number + category + name + description + sub-domain)
- *     is the canonical "list of children" shape. Sister sites with sub-section
- *     lists (e.g. blog post index, tool list) re-use it.
- *   • The monochrome-until-hover CSS lives in global.css under .index-row;
- *     other sites that want the same behaviour copy those rules.
- *   • The single vermilion .start-arrow is the only first-paint color exception.
+ * Bands on the page (top → bottom):
+ *   1. Wordmark (`oriz`) — large serif, top-left.
+ *   2. One-paragraph hero (~50 words) — explains what oriz is.
+ *   3. Sites — 10-row plain list (name · description · subdomain).
+ *   4. Latest from the blog — 5 most recent posts pulled from
+ *      https://blog.oriz.in/rss.xml at build time. Graceful fallback if
+ *      the feed is missing (the blog may not be deployed yet).
+ *   5. More — GitHub, Support, Privacy, Search the web (MultiSearch).
+ *   6. StatusBanner — invisible unless an incident is live.
+ *   7. Tiny colophon line (© 2026 · operator) — keeps "small + plain" rule.
+ *
+ * BaseLayout is invoked with chrome="bare" (no Header / no Footer) and a
+ * body class of "home-bare" which flips the global tokens to
+ * white-paper / near-black-ink / serif-everywhere (see global.css).
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import { FAMILY_SITES } from '~/lib/family'
+import MultiSearch from '~/components/MultiSearch.tsx'
+import StatusBanner from '~/components/StatusBanner.tsx'
+
+import Parser from 'rss-parser'
 
 /*
- * The 11-row index. Each FAMILY_SITES entry is annotated with:
- *   - cat: the broadsheet category (READ / WRITE / MAKE / TOOL / TRACK / META)
- *   - desc: a one-line description (overrides FAMILY_SITES.tagline for tighter copy)
- *
- * Order matters — the brief says "01 books, 02 book-lore, 03 blog, …".
- * Home is META, last (10), with description "This page."
+ * The 10 sister-site rows. Order matches the brief.
+ * Plain { name, desc, domain, url } — no categories, no numbering.
+ * The current `home` slug is excluded (this IS the home page).
  */
-type IndexCat = 'READ' | 'WRITE' | 'MAKE' | 'TOOL' | 'TRACK' | 'META'
-
-interface IndexRow {
-  slug: string
-  cat: IndexCat
-  desc: string
-}
-
-const ROWS: IndexRow[] = [
-  { slug: 'books', cat: 'READ', desc: 'A second-life library, by-default-public.' },
-  { slug: 'book-lore', cat: 'READ', desc: 'Marginalia worth keeping — 461 book summaries.' },
-  { slug: 'blog', cat: 'WRITE', desc: 'Long-form notes, drafted in the open.' },
-  { slug: 'journal', cat: 'WRITE', desc: 'End-to-end-encrypted daily entries.' },
-  { slug: 'cards', cat: 'MAKE', desc: '750 India card profiles — credit, debit, prepaid.' },
-  { slug: 'urls-to-md', cat: 'MAKE', desc: 'Paste a URL, get a clean Markdown file.' },
-  { slug: 'pdf-tools', cat: 'TOOL', desc: 'Merge, split, redact — never uploads.' },
-  { slug: 'image-tools', cat: 'TOOL', desc: 'Convert, compress, scrub EXIF locally.' },
-  { slug: 'finance', cat: 'TRACK', desc: 'Graph-paper ledger for personal money.' },
-  { slug: 'me', cat: 'META', desc: 'Daily-rebuilt digital identity datasheet.' },
-  { slug: 'home', cat: 'META', desc: 'This page.' },
+const SITES: { name: string; desc: string; domain: string; url: string }[] = [
+  { name: 'Blog',        desc: 'Long-form essays + tutorials.',     domain: 'blog.oriz.in',        url: 'https://blog.oriz.in' },
+  { name: 'Books',       desc: 'Reading log + book reviews.',       domain: 'books.oriz.in',       url: 'https://books.oriz.in' },
+  { name: 'Book Lore',   desc: 'Knowledge graph from books.',       domain: 'book-lore.oriz.in',   url: 'https://book-lore.oriz.in' },
+  { name: 'Cards',       desc: 'Spaced-repetition flashcards.',     domain: 'cards.oriz.in',       url: 'https://cards.oriz.in' },
+  { name: 'Finance',     desc: 'Personal finance dashboard.',       domain: 'finance.oriz.in',     url: 'https://finance.oriz.in' },
+  { name: 'Image Tools', desc: 'Browser image utilities.',          domain: 'image-tools.oriz.in', url: 'https://image-tools.oriz.in' },
+  { name: 'Journal',     desc: 'Daily journal.',                    domain: 'journal.oriz.in',     url: 'https://journal.oriz.in' },
+  { name: 'Me',          desc: 'Lifestream.',                       domain: 'me.oriz.in',          url: 'https://me.oriz.in' },
+  { name: 'PDF Tools',   desc: 'Browser PDF utilities.',            domain: 'pdf-tools.oriz.in',   url: 'https://pdf-tools.oriz.in' },
+  { name: 'URLs to MD',  desc: 'URL → clean Markdown.',             domain: 'urls-to-md.oriz.in',  url: 'https://urls-to-md.oriz.in' },
 ]
 
-const sitesBySlug = Object.fromEntries(FAMILY_SITES.map((s) => [s.slug, s]))
-const indexEntries = ROWS.map((row, i) => {
-  const s = sitesBySlug[row.slug]
-  if (!s) throw new Error(`oriz-home/index.astro: FAMILY_SITES has no entry for ${row.slug}`)
-  return {
-    n: String(i + 1).padStart(2, '0'),
-    cat: row.cat,
-    desc: row.desc,
-    name: s.name,
-    url: s.url,
-    domain: new URL(s.url).host,
-  }
-})
+/*
+ * Latest 5 posts from the blog feed. Build-time fetch via rss-parser.
+ * The blog site may not be deployed yet — wrap in try/catch and degrade
+ * gracefully ("Blog launching soon — see github…"). Never let an RSS
+ * failure break the build.
+ */
+interface Post {
+  title: string
+  link: string
+  pubDate: string
+}
 
-// Organization + WebSite + Person triple is emitted by BaseLayout's
-// <JsonLd> default; the index page contributes nothing extra.
+let posts: Post[] = []
+let blogFetchOk = false
+try {
+  const parser = new Parser({ timeout: 8000 })
+  const feed = await parser.parseURL('https://blog.oriz.in/rss.xml')
+  posts = (feed.items ?? []).slice(0, 5).map((i) => ({
+    title: i.title ?? '(untitled)',
+    link: i.link ?? 'https://blog.oriz.in',
+    pubDate: i.pubDate ?? i.isoDate ?? '',
+  }))
+  blogFetchOk = posts.length > 0
+} catch {
+  posts = []
+  blogFetchOk = false
+}
+
+function fmtDate(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+}
 ---
 
-<BaseLayout>
-  {/*
-    Band 2 — Masthead lockup. The wordmark IS the hero. No illustration,
-    no gradient, no 3D blob. The only first-paint vermilion is the strike
-    through the `z` (inside Wordmark.astro) and the .start-arrow below.
-  */}
-  <section class="spine masthead">
-    <Wordmark size={128} href={null} asHeading={true} />
+<BaseLayout
+  chrome="bare"
+  bodyClass="home-bare"
+  title="oriz — a family of free-forever, recruiter-grade web tools"
+  description="oriz is a family of free-forever, recruiter-grade web tools and reading sites built and maintained by Chirag Singhal. One sign-in, one design system, one knowledge base."
+>
+  {/* Status banner — renders nothing unless an active incident is live. */}
+  <div class="status-mount"><StatusBanner client:load siteId="home" /></div>
 
-    <p class="manifesto display">
-      <span>eleven</span><span class="dot">·</span>
-      <span>small</span><span class="dot">·</span>
-      <span>free</span><span class="dot">·</span>
-      <span>sites</span>
+  <article class="page">
+    {/* 1 — Wordmark. Plain text serif, no decoration. */}
+    <h1 class="brand">oriz</h1>
+
+    {/* 2 — Hero paragraph, ~50 words. */}
+    <p class="lede">
+      oriz is a family of free-forever, recruiter-grade web tools and reading
+      sites built and maintained by Chirag Singhal. Every site shares a single
+      sign-in, a single design system, and a single knowledge base — small,
+      static, and built to outlive their author.
     </p>
-    <p class="manifesto subtle">
-      one <span class="dot">·</span> sign-in <span class="dot">·</span> one
-      <span class="dot">·</span> person <span class="dot">·</span> one
-      <span class="dot">·</span> /etc
-    </p>
 
-    <a href="#index" class="start-arrow">start anywhere ↓</a>
-  </section>
-
-  {/*
-    Band 3 — The index (numbered TOC). 11 rows. Whole-row clickable.
-    Monochrome-until-hover signature lives in the .index-row CSS below.
-  */}
-  <hr class="hairline spine-rule" />
-  <section class="spine index" id="index" aria-label="The index">
-    <ol class="index-list">
+    {/* 3 — Sites list. Plain rows, no card chrome. */}
+    <h2 class="section-h">Sites</h2>
+    <ul class="sites">
       {
-        indexEntries.map((e) => (
-          <li class="index-row-wrap">
-            <a class="index-row" href={e.url}>
-              <span class="num mono">{e.n}</span>
-              <span class="cat mono">{e.cat}</span>
-              <span class="meat">
-                <span class="name display">{e.name}</span>
-                <span class="desc">{e.desc}</span>
-              </span>
-              <span class="domain mono">{e.domain}</span>
+        SITES.map((s) => (
+          <li class="site-row">
+            <a class="site-link" href={s.url}>
+              <strong class="site-name">{s.name}</strong>
+              <span class="site-desc">{s.desc}</span>
+              <span class="site-domain">{s.domain}</span>
             </a>
           </li>
         ))
       }
-    </ol>
-  </section>
-  <hr class="hairline spine-rule" />
+    </ul>
+
+    {/* 4 — Latest from the blog. Build-time RSS, graceful fallback. */}
+    <h2 class="section-h">Latest from the blog</h2>
+    {
+      blogFetchOk ? (
+        <ul class="posts">
+          {posts.map((p) => (
+            <li class="post-row">
+              <span class="post-date">{fmtDate(p.pubDate)}</span>
+              <span class="post-sep" aria-hidden="true">·</span>
+              <a class="post-link" href={p.link}>
+                {p.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="post-fallback">
+          Blog launching soon — see{' '}
+          <a href="https://github.com/chirag127/oriz-blog-site">github.com/chirag127/oriz-blog-site</a>.
+        </p>
+      )
+    }
+
+    {/* 5 — More. Plain links, including the MultiSearch popover. */}
+    <h2 class="section-h">More</h2>
+    <ul class="more">
+      <li>
+        <span class="more-name">GitHub</span>
+        <a href="https://github.com/chirag127/oriz">github.com/chirag127/oriz</a>
+      </li>
+      <li>
+        <span class="more-name">Support</span>
+        <a href="/support/">/support</a>
+      </li>
+      <li>
+        <span class="more-name">Privacy</span>
+        <a href="/privacy/">/privacy</a>
+      </li>
+      <li>
+        <span class="more-name">Search the web</span>
+        <span class="search-mount">
+          <MultiSearch client:idle titleSuffix=" — oriz" label="Search the web →" />
+        </span>
+      </li>
+    </ul>
+
+    {/* 7 — Tiny colophon. */}
+    <p class="colophon">© 2026 Chirag Singhal · Bhubaneswar, IN</p>
+  </article>
 </BaseLayout>
 
 <style>
-  /* ── Band 2: masthead lockup ────────────────────────────────────────── */
+  /* ── Page scaffold ──────────────────────────────────────────────────── */
 
-  .masthead {
-    text-align: center;
-    padding-block: clamp(3rem, 9vw, 6rem) clamp(2.5rem, 7vw, 5rem);
+  .status-mount {
+    /* Status banner is dismissible / hidden by default — keep it pinned to
+       the top so it doesn't displace the page above the fold normally. */
+    width: 100%;
   }
 
-  /* The wordmark inherits its size from the Wordmark.astro `size` prop.
-     We just want it centered and on its own line. */
-  .masthead :global(.wordmark) {
+  .page {
+    max-width: 720px;
     margin: 0 auto;
-    /* Drop the optical-size axis as far as Newsreader allows for display. */
-    font-variation-settings: 'opsz' 60;
-    letter-spacing: 0.04em;
+    padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2rem)
+      clamp(3rem, 8vw, 5rem);
   }
 
-  .manifesto {
-    margin: 1.75rem auto 0;
-    color: var(--ink-mute);
-    line-height: 1.4;
-  }
-  .manifesto.display {
+  /* ── 1 · Wordmark ──────────────────────────────────────────────────── */
+
+  .brand {
     font-family: var(--font-display);
-    font-style: italic;
-    font-weight: 400;
-    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-  }
-  .manifesto.subtle {
-    font-family: var(--font-sans);
-    font-style: italic;
-    font-weight: 400;
-    font-size: 1rem;
-    margin-top: 0.5rem;
-  }
-  .manifesto .dot {
-    margin-inline: 0.45em;
-    color: var(--ink-mute);
-    /* The brief explicitly forbids vermilion · separators. Stay in --ink-mute. */
+    font-weight: 600;
+    font-size: clamp(2.5rem, 6vw, 3.25rem);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    margin: 0 0 clamp(1.5rem, 4vw, 2.25rem);
+    color: var(--ink);
   }
 
-  .start-arrow {
-    display: inline-block;
-    margin-top: clamp(2rem, 6vw, 3.5rem);
-    padding: 0.5rem 1rem;
-    color: var(--vermilion);
-    font-family: var(--font-sans);
-    font-size: 14px;
+  /* ── 2 · Hero paragraph ────────────────────────────────────────────── */
+
+  .lede {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    margin: 0 0 clamp(2.25rem, 6vw, 3.25rem);
+    color: var(--ink);
+    max-width: 60ch;
+  }
+
+  /* ── Section headings — small caps, regular weight ─────────────────── */
+
+  .section-h {
+    font-family: var(--font-display);
+    font-variant-caps: all-small-caps;
+    font-feature-settings: 'smcp' 1, 'c2sc' 1;
     font-weight: 500;
-    letter-spacing: 0.02em;
-    text-decoration: none;
-    border-bottom: 1px solid var(--vermilion);
-  }
-  .start-arrow:hover {
-    background: color-mix(in oklab, var(--vermilion) 12%, transparent);
-  }
-  .start-arrow:focus-visible {
-    outline: 2px solid var(--vermilion);
-    outline-offset: 3px;
+    font-size: 0.9375rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-mute);
+    margin: clamp(2rem, 5vw, 2.75rem) 0 clamp(0.75rem, 2vw, 1rem);
   }
 
-  /* ── Band 3: the index ──────────────────────────────────────────────── */
+  /* ── 3 · Sites list ────────────────────────────────────────────────── */
 
-  .spine-rule {
-    /* Section dividers around the index — same weight as header rules. */
-  }
-
-  .index {
-    padding-block: 0;
-  }
-  .index-list {
+  .sites,
+  .posts,
+  .more {
     list-style: none;
     padding: 0;
     margin: 0;
   }
-  .index-row-wrap {
-    border-bottom: 1px solid color-mix(in oklab, var(--ink-mute) 20%, transparent);
+
+  .site-row {
+    border-top: 1px solid var(--rule);
   }
-  .index-row-wrap:last-child {
-    border-bottom: 0;
+  .site-row:last-child {
+    border-bottom: 1px solid var(--rule);
   }
 
-  .index-row {
+  .site-link {
     display: grid;
-    grid-template-columns: 48px 88px 1fr 220px;
+    grid-template-columns: 7.5rem 1fr auto;
     gap: 1rem;
-    align-items: center;
-    min-height: 64px;
-    padding-block: 0.875rem;
+    align-items: baseline;
+    padding-block: 0.625rem;
+    color: inherit;
     text-decoration: none;
-    color: var(--ink); /* default — no accents at rest */
   }
-  .index-row .num {
+  .site-link:hover {
+    text-decoration: none;
+  }
+  .site-link:hover .site-name,
+  .site-link:hover .site-domain {
+    color: var(--accent);
+  }
+  .site-link:hover .site-domain {
+    text-decoration: underline;
+  }
+
+  .site-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .site-desc {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .site-domain {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
     color: var(--ink-mute);
-    font-family: var(--font-mono);
-    font-size: 13px;
+    text-align: right;
+    white-space: nowrap;
   }
-  .index-row .cat {
+
+  /* ── 4 · Latest blog posts ─────────────────────────────────────────── */
+
+  .post-row {
+    padding-block: 0.375rem;
+    color: var(--ink);
+  }
+  .post-date {
+    font-family: var(--font-display);
     color: var(--ink-mute);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
+    font-size: 0.9375rem;
+    display: inline-block;
+    min-width: 6.5rem;
   }
-  .index-row .meat {
+  .post-sep {
+    color: var(--ink-mute);
+    margin-inline: 0.5rem;
+  }
+  .post-link {
+    color: var(--accent);
+  }
+  .post-fallback {
+    margin: 0;
+    color: var(--ink-mute);
+  }
+
+  /* ── 5 · More section ──────────────────────────────────────────────── */
+
+  .more li {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 1rem;
+    padding-block: 0.375rem;
+    align-items: baseline;
+  }
+  .more-name {
+    color: var(--ink);
+  }
+  .search-mount {
+    display: inline-block;
+  }
+
+  /* MultiSearch trigger — render as a plain inline link, not a button. */
+  .search-mount :global([data-oriz-multisearch='trigger']) {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: var(--accent);
+    font: inherit;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .search-mount :global([data-oriz-multisearch='trigger']:hover) {
+    text-decoration: underline;
+  }
+  .search-mount :global([data-oriz-multisearch='trigger']:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .search-mount :global([data-oriz-multisearch='popover']) {
+    position: absolute;
+    margin-top: 0.25rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0.75rem;
+    z-index: 50;
+    min-width: 240px;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+  .search-mount :global([data-oriz-multisearch='query']) {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    color: var(--ink-mute);
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 220px;
+  }
+  .search-mount :global([data-oriz-multisearch='list']) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
-    min-width: 0;
   }
-  .index-row .name {
+  .search-mount :global([data-oriz-multisearch='engine']) {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 0.5rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .search-mount :global([data-oriz-multisearch='engine']:hover) {
+    background: color-mix(in oklab, var(--accent) 8%, transparent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .search-mount :global([data-oriz-multisearch='glyph']) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6875rem;
+    color: var(--ink-mute);
+    border: 1px solid var(--rule);
+  }
+
+  /* ── 6 · Status banner styling on white paper ──────────────────────── */
+
+  .status-mount :global([data-oriz-status]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 22px;
-    line-height: 1.15;
-    color: var(--ink); /* explicit ink — no first-paint color */
-    letter-spacing: -0.005em;
+    font-size: 0.9375rem;
+    color: var(--ink);
+    background: #fff8db; /* mild yellow strap, not the dark broadsheet mustard */
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
   }
-  .index-row .desc {
-    font-family: var(--font-sans);
-    font-size: 14px;
+  .status-mount :global([data-oriz-status='partial_outage']) {
+    background: #fdecd5;
+  }
+  .status-mount :global([data-oriz-status='major_outage']) {
+    background: #fde2dc;
+  }
+  .status-mount :global([data-oriz-status='maintenance']) {
+    background: #e6f3ec;
+  }
+  .status-mount :global([data-oriz-status-link]) {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .status-mount :global([data-oriz-status-dismiss]) {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+  }
+
+  /* ── 7 · Colophon ──────────────────────────────────────────────────── */
+
+  .colophon {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
     color: var(--ink-mute);
-    line-height: 1.4;
-  }
-  .index-row .domain {
-    color: var(--ink-mute);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    text-align: right;
-    font-feature-settings:
-      'tnum' 1,
-      'zero' 1,
-      'calt' 0;
+    font-size: 0.875rem;
   }
 
-  /*
-   * THE signature — monochrome-until-hover.
-   * Default state above is ink-on-paper only. On :hover or :focus-visible,
-   * the row "comes alive" — mustard category + numerals, ledger green
-   * sub-domain, mustard 1px hairline at the bottom.
-   */
-  .index-row:hover {
-    box-shadow: inset 0 -1px 0 var(--mustard);
-  }
-  .index-row:hover .num,
-  .index-row:hover .cat {
-    color: var(--mustard);
-  }
-  .index-row:hover .domain {
-    color: var(--ledger);
-  }
-  .index-row:hover .name {
-    color: var(--ink); /* name stays ink — only labels and domain shift */
-  }
-
-  .index-row:focus-visible {
-    outline: none;
-    background: color-mix(in oklab, var(--highlighter) 30%, transparent);
-    box-shadow: inset 0 -1px 0 var(--mustard);
-  }
-  .index-row:focus-visible .num,
-  .index-row:focus-visible .cat {
-    color: var(--mustard);
-  }
-  .index-row:focus-visible .domain {
-    color: var(--ledger);
-  }
-
-  /* Mobile — collapse the 4-col grid to a 2-row stack. */
-  @media (max-width: 640px) {
-    .index-row {
-      grid-template-columns: 36px 1fr;
+  /* ── Mobile — collapse rows to two-line stacks. ────────────────────── */
+  @media (max-width: 560px) {
+    .site-link {
+      grid-template-columns: 1fr;
       grid-template-areas:
-        'num    cat'
-        'meat   meat'
-        'domain domain';
-      row-gap: 0.25rem;
-      padding-block: 1rem;
+        'name'
+        'desc'
+        'domain';
+      gap: 0.125rem;
     }
-    .index-row .num {
-      grid-area: num;
+    .site-name { grid-area: name; }
+    .site-desc { grid-area: desc; color: var(--ink-mute); font-size: 0.9375rem; }
+    .site-domain { grid-area: domain; text-align: left; }
+
+    .more li {
+      grid-template-columns: 1fr;
+      gap: 0.125rem;
     }
-    .index-row .cat {
-      grid-area: cat;
-      text-align: right;
+    .post-date {
+      min-width: 0;
+      display: block;
     }
-    .index-row .meat {
-      grid-area: meat;
+    .post-sep {
+      display: none;
     }
-    .index-row .domain {
-      grid-area: domain;
-      text-align: left;
+    .post-link {
+      display: block;
     }
   }
 </style>

@@ -274,3 +274,45 @@
 .skip-link:focus {
   left: 0;
 }
+
+/*
+ * ── home-bare ───────────────────────────────────────────────────────────
+ * Alphabet-style (abc.xyz) variant for the parent-company landing page.
+ * Activated only when <body class="home-bare">. White paper, near-black
+ * ink, single accent for links, generous serif at all sizes. The other
+ * pages (about / sites / legal / account / contact / support / privacy)
+ * keep the broadsheet-almanac dark theme above.
+ *
+ * Token overrides scoped to body.home-bare so nothing else is affected.
+ */
+body.home-bare {
+  color-scheme: light;
+  --paper: #ffffff;
+  --paper-deep: #fafafa;
+  --ink: #1a1a1a;
+  --ink-mute: #666666;
+  --rule: #e6e6e6;
+  --accent: #1a73e8; /* single link accent — abc.xyz uses Google blue */
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display); /* serif everywhere on this page */
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+body.home-bare a {
+  color: var(--accent);
+  text-decoration: none;
+}
+body.home-bare a:hover {
+  text-decoration: underline;
+}
+body.home-bare a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+body.home-bare ::selection {
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+  color: var(--ink);
+}

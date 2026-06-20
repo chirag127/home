@@ -34,6 +34,15 @@ interface Props {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[]
   /** Subtitle shown after `oriz /` in the wordmark. Default: `home`. */
   wordmarkSubtitle?: string
+  /**
+   * Layout chrome.
+   *   'full' → broadsheet Header + Footer (default; sub-pages use this).
+   *   'bare' → no Header / no Footer; the page renders its own minimal scaffold.
+   *            The Alphabet-style homepage uses this.
+   */
+  chrome?: 'full' | 'bare'
+  /** Body class name (e.g. 'home-bare' to flip to white-paper / serif). */
+  bodyClass?: string
 }
 
 const {
@@ -43,6 +52,8 @@ const {
   noindex = false,
   jsonLd,
   wordmarkSubtitle = 'home',
+  chrome = 'full',
+  bodyClass,
 } = Astro.props
 
 const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT
@@ -118,11 +129,11 @@ const cfAnalyticsEnabled = import.meta.env.PUBLIC_ENABLE_CF_ANALYTICS === 'true'
       )
     }
   </head>
-  <body>
+  <body class={bodyClass}>
     <a href="#main" class="skip-link">Skip to content</a>
-    <Header wordmarkSubtitle={wordmarkSubtitle} />
+    {chrome === 'full' && <Header wordmarkSubtitle={wordmarkSubtitle} />}
     <main id="main"><slot /></main>
-    <Footer />
+    {chrome === 'full' && <Footer />}
     <ConsentBanner />
   </body>
 </html>
