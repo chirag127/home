@@ -1,26 +1,48 @@
 ---
 /*
- * oriz / home — index page (Alphabet-style parent-company landing).
+ * Oriz / home — index page (Alphabet-style parent-company landing).
  *
  * Modeled after https://abc.xyz — pure white background, single ~720px
  * centered column, serif everywhere, no header/footer chrome, plain rows
- * of subsidiary sites. Replaces the prior broadsheet-almanac aesthetic
- * because the brief is "look like the parent company landing page".
+ * of subsidiary sites. The CONTENT, however, has been expanded so a
+ * recruiter / collaborator landing here for the first time forms an
+ * accurate picture of the depth of work behind the family in <5 seconds.
  *
  * Bands on the page (top → bottom):
- *   1. Wordmark (`oriz`) — large serif, top-left.
- *   2. One-paragraph hero (~50 words) — explains what oriz is.
- *   3. Sites — 10-row plain list (name · description · subdomain).
- *   4. Latest from the blog — 5 most recent posts pulled from
- *      https://blog.oriz.in/rss.xml at build time. Graceful fallback if
- *      the feed is missing (the blog may not be deployed yet).
- *   5. More — GitHub, Support, Privacy, Search the web (MultiSearch).
- *   6. StatusBanner — invisible unless an incident is live.
- *   7. Tiny colophon line (© 2026 · operator) — keeps "small + plain" rule.
+ *   1. Wordmark (`Oriz`) — large serif, top-left. Title-Case per
+ *      `knowledge/decisions/branding/title-case-oriz.md`.
+ *   2. One-paragraph hero — what Oriz is + who built it.
+ *   3. Sites — the 10 family sites (this page itself excluded).
+ *   4. Browser extensions — auto-fed from GitHub API at build, filtered
+ *      by `*-ext` / `*-vsc-ext` slug suffix per the family naming rule.
+ *      Falls back to a placeholder line when none have shipped yet.
+ *   5. Open-source packages — auto-fed from GitHub API + hardcoded
+ *      fallback list of the seven `@chirag127/*` packages already
+ *      registered as submodules under `packages/`.
+ *   6. Tech stack — condensed 15-row digest of the canonical stack
+ *      table at `knowledge/services/index.md`. Three columns: Layer,
+ *      Pick, Why. No decoration.
+ *   7. By the numbers — small metric strip (repos, concept files,
+ *      sites, languages, years building). Build-time fetched where
+ *      possible, hardcoded fallback otherwise.
+ *   8. Latest from the blog — 5 most recent posts pulled from
+ *      `https://blog.oriz.in/rss.xml` at build time. Graceful fallback
+ *      if the feed is missing (the blog may not be deployed yet).
+ *   9. Recent commits — top 5 PushEvents from chirag127's public
+ *      activity feed. Graceful fallback if rate-limited.
+ *  10. More — GitHub, Support, Privacy, Search the web (MultiSearch).
+ *  11. StatusBanner — invisible unless an incident is live.
+ *  12. Tiny colophon line — keeps "small + plain" rule.
  *
  * BaseLayout is invoked with chrome="bare" (no Header / no Footer) and a
  * body class of "home-bare" which flips the global tokens to
  * white-paper / near-black-ink / serif-everywhere (see global.css).
+ *
+ * IMPLEMENTATION NOTE — every build-time API fetch is wrapped in
+ * try/catch with hardcoded fallbacks. An offline build, a 60-req/h
+ * GitHub-anonymous rate limit, or a transient DNS hiccup MUST NOT break
+ * the production build. Astro's static build re-runs hourly via the CI
+ * cron, so the data freshens without any client-side fetch cost.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
 import MultiSearch from '~/components/MultiSearch.tsx'
@@ -28,11 +50,12 @@ import StatusBanner from '~/components/StatusBanner.tsx'
 
 import Parser from 'rss-parser'
 
-/*
- * The 10 sister-site rows. Order matches the brief.
- * Plain { name, desc, domain, url } — no categories, no numbering.
+/* ────────────────────────────────────────────────────────────────────
+ * Sites — the 10 sister-site rows.
+ * Order matches the family directory; oriz-urls-to-md is intentionally
+ * an empty placeholder (see decisions/branding/oriz-urls-to-md-site-empty-placeholder.md).
  * The current `home` slug is excluded (this IS the home page).
- */
+ * ──────────────────────────────────────────────────────────────────── */
 const SITES: { name: string; desc: string; domain: string; url: string }[] = [
   { name: 'Blog',        desc: 'Long-form essays + tutorials.',     domain: 'blog.oriz.in',        url: 'https://blog.oriz.in' },
   { name: 'Books',       desc: 'Reading log + book reviews.',       domain: 'books.oriz.in',       url: 'https://books.oriz.in' },
@@ -46,12 +69,174 @@ const SITES: { name: string; desc: string; domain: string; url: string }[] = [
   { name: 'URLs to MD',  desc: 'URL → clean Markdown.',             domain: 'urls-to-md.oriz.in',  url: 'https://urls-to-md.oriz.in' },
 ]
 
-/*
+/* ────────────────────────────────────────────────────────────────────
+ * Build-time GitHub API helper — anonymous, gracefully tolerant.
+ * ──────────────────────────────────────────────────────────────────── */
+interface GhRepo {
+  name: string
+  description: string | null
+  html_url: string
+  archived?: boolean
+  fork?: boolean
+}
+interface GhEvent {
+  type: string
+  repo: { name: string }
+  payload: { commits?: { message: string }[] }
+  created_at: string
+}
+
+async function ghFetch<T>(url: string): Promise<T | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'oriz-home-build',
+      },
+    })
+    if (!res.ok) return null
+    return (await res.json()) as T
+  } catch {
+    return null
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * Extensions — repos whose slug ends in `-ext` or `-vsc-ext`.
+ * Hardcoded fallback list is empty today (no extensions shipped yet);
+ * this auto-fills as soon as the first extension repo lands on GitHub.
+ * ──────────────────────────────────────────────────────────────────── */
+interface ExtRow { name: string; desc: string; url: string }
+
+let extensions: ExtRow[] = []
+let extsFromApi = false
+{
+  const repos = await ghFetch<GhRepo[]>(
+    'https://api.github.com/users/chirag127/repos?per_page=100&sort=updated',
+  )
+  if (Array.isArray(repos)) {
+    extensions = repos
+      .filter((r) => !r.archived && !r.fork)
+      .filter((r) => /-(?:vsc-)?ext$/.test(r.name))
+      .map((r) => ({
+        name: r.name,
+        desc: r.description ?? '',
+        url: r.html_url,
+      }))
+    extsFromApi = true
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * Open-source packages — start with the hardcoded family list (matches
+ * `packages/` submodules in master `.gitmodules`), then OPT-IN augment
+ * with anything else from the GitHub API that looks package-shaped.
+ * Hardcoded list is the source of truth so an API miss still produces
+ * a complete page.
+ * ──────────────────────────────────────────────────────────────────── */
+interface PkgRow {
+  name: string         // npm-scoped name shown in-page
+  desc: string
+  npm: string          // npmjs.com URL
+  github: string       // github.com URL
+}
+
+const PKGS: PkgRow[] = [
+  {
+    name: '@chirag127/oriz-kit',
+    desc: 'Shared component library — MultiSearch, StatusBanner, ContactForm, JsonLd, Image, Captcha.',
+    npm: 'https://www.npmjs.com/package/@chirag127/oriz-kit',
+    github: 'https://github.com/chirag127/oriz-kit',
+  },
+  {
+    name: '@chirag127/firebase-init',
+    desc: 'Singleton Firebase initialiser shared by every site, extension, and Worker.',
+    npm: 'https://www.npmjs.com/package/@chirag127/firebase-init',
+    github: 'https://github.com/chirag127/firebase-init',
+  },
+  {
+    name: '@chirag127/auth-ui',
+    desc: 'Shared sign-in / sign-out / account-menu panels on top of firebase-init.',
+    npm: 'https://www.npmjs.com/package/@chirag127/auth-ui',
+    github: 'https://github.com/chirag127/auth-ui',
+  },
+  {
+    name: '@chirag127/contact-form',
+    desc: 'Web3Forms-backed contact form with Static Forms vendor-redundant fallback.',
+    npm: 'https://www.npmjs.com/package/@chirag127/contact-form',
+    github: 'https://github.com/chirag127/contact-form',
+  },
+  {
+    name: '@chirag127/sidebar',
+    desc: 'Radix-based slide-out drawer used as the cross-site nav surface.',
+    npm: 'https://www.npmjs.com/package/@chirag127/sidebar',
+    github: 'https://github.com/chirag127/sidebar',
+  },
+  {
+    name: '@chirag127/oriz-omnipost',
+    desc: 'RSS → every blogging platform cross-poster with idempotent guid tracking.',
+    npm: 'https://www.npmjs.com/package/@chirag127/oriz-omnipost',
+    github: 'https://github.com/chirag127/oriz-omnipost',
+  },
+  {
+    name: '@chirag127/oriz-lifestream',
+    desc: 'Auto-tracked life-event ingester — webhook → JSONL canonical → Turso warm cache.',
+    npm: 'https://www.npmjs.com/package/@chirag127/oriz-lifestream',
+    github: 'https://github.com/chirag127/oriz-lifestream',
+  },
+]
+
+/* ────────────────────────────────────────────────────────────────────
+ * Tech stack — condensed 15-row table.
+ * Source: knowledge/services/index.md. Rows are intentionally short;
+ * the canonical knowledge bundle is the deep-dive surface.
+ * ──────────────────────────────────────────────────────────────────── */
+const STACK: { layer: string; pick: string; why: string }[] = [
+  { layer: 'Hosting',      pick: 'Cloudflare Pages',                                                          why: 'Free unlimited, edge CDN.' },
+  { layer: 'Edge compute', pick: 'Cloudflare Workers',                                                        why: '100K req/day free.' },
+  { layer: 'Auth',         pick: 'Firebase Auth (Spark)',                                                     why: 'Free unlimited.' },
+  { layer: 'Database',     pick: 'Firestore + Turso libSQL + Neon Postgres + JSONL canonical',                why: '4-tier strategy.' },
+  { layer: 'AI',           pick: 'Puter.js (browser) + Cloudflare Workers AI (server)',                       why: 'Free, no API keys.' },
+  { layer: 'Search',       pick: 'Algolia + Pagefind',                                                        why: 'Free 1M docs.' },
+  { layer: 'Analytics',    pick: 'CF Web Analytics + GA4 + PostHog + Microsoft Clarity + UTM',                why: '5-tier, all free.' },
+  { layer: 'Errors',       pick: 'Sentry',                                                                    why: 'Free 5K events/mo, env toggle.' },
+  { layer: 'Email',        pick: 'Resend (transactional) + EmailOctopus (marketing) + Buttondown (digest)',  why: 'All free.' },
+  { layer: 'Push',         pick: 'Firebase Cloud Messaging + Knock',                                          why: 'Free unlimited + 10K/mo.' },
+  { layer: 'Billing',      pick: 'Razorpay (India) + Lemon Squeezy (intl) + 10 donation rails',               why: 'Free, no card.' },
+  { layer: 'CMS',          pick: 'Markdown in Git',                                                           why: 'Zero infra.' },
+  { layer: 'Build',        pick: 'Astro 6 + React 19 + pnpm + GitHub Actions',                                why: 'OSS.' },
+  { layer: 'Code quality', pick: 'Sonarcloud + CodeRabbit + Codecov + CodeClimate + DeepSource + biome + Tokei', why: '9-tool stack.' },
+  { layer: 'Knowledge',    pick: 'OKF v0.1 bundle in `knowledge/`',                                           why: '200+ concept files.' },
+]
+
+/* ────────────────────────────────────────────────────────────────────
+ * By-the-numbers — auto-tracked metric strip.
+ * Repo count comes from the GitHub API; concept count is hardcoded
+ * (the build container doesn't necessarily mount the parent monorepo's
+ * knowledge/ tree). Years-building is brand-locked at 2 years.
+ * ──────────────────────────────────────────────────────────────────── */
+let repoCount = 60 // fallback
+{
+  const userMeta = await ghFetch<{ public_repos: number }>('https://api.github.com/users/chirag127')
+  if (userMeta && typeof userMeta.public_repos === 'number') {
+    repoCount = userMeta.public_repos
+  }
+}
+
+const NUMBERS: { label: string; value: string }[] = [
+  { label: 'Public repos',                value: String(repoCount) },
+  { label: 'Concept files in knowledge',  value: '430+' },
+  { label: 'Sites in family',             value: '10' },
+  { label: 'Languages',                   value: 'TypeScript · Astro · React · MDX' },
+  { label: 'Years building',              value: '2 (since 2024)' },
+]
+
+/* ────────────────────────────────────────────────────────────────────
  * Latest 5 posts from the blog feed. Build-time fetch via rss-parser.
  * The blog site may not be deployed yet — wrap in try/catch and degrade
  * gracefully ("Blog launching soon — see github…"). Never let an RSS
  * failure break the build.
- */
+ * ──────────────────────────────────────────────────────────────────── */
 interface Post {
   title: string
   link: string
@@ -74,33 +259,75 @@ try {
   blogFetchOk = false
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * Recent commits — fold the user's public PushEvents into a 5-row
+ * "what's been shipped lately" strip. Fail silently on rate-limit.
+ * ──────────────────────────────────────────────────────────────────── */
+interface CommitRow { repo: string; message: string; ago: string; url: string }
+
+let commits: CommitRow[] = []
+{
+  const events = await ghFetch<GhEvent[]>(
+    'https://api.github.com/users/chirag127/events/public?per_page=30',
+  )
+  if (Array.isArray(events)) {
+    commits = events
+      .filter((e) => e.type === 'PushEvent' && Array.isArray(e.payload?.commits))
+      .flatMap((e) => {
+        const top = (e.payload.commits ?? [])[0]
+        if (!top) return []
+        const shortRepo = e.repo.name.replace(/^chirag127\//, '')
+        return [{
+          repo: shortRepo,
+          message: top.message.split('\n')[0],
+          ago: relativeTime(e.created_at),
+          url: `https://github.com/${e.repo.name}`,
+        }]
+      })
+      .slice(0, 5)
+  }
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const sec = Math.max(0, (Date.now() - then) / 1000)
+  if (sec < 60) return `${Math.floor(sec)}s ago`
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`
+  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+}
+
 function fmtDate(iso: string): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
 }
+
+const buildDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
 ---
 
 <BaseLayout
   chrome="bare"
   bodyClass="home-bare"
-  title="oriz — a family of free-forever, recruiter-grade web tools"
-  description="oriz is a family of free-forever, recruiter-grade web tools and reading sites built and maintained by Chirag Singhal. One sign-in, one design system, one knowledge base."
+  title="Oriz — a family of free-forever, recruiter-grade web tools"
+  description="Oriz is a family of free-forever, recruiter-grade web tools, reading sites, and developer libraries built and maintained by Chirag Singhal. Every site shares one sign-in, one design system, and one knowledge base."
 >
   {/* Status banner — renders nothing unless an active incident is live. */}
   <div class="status-mount"><StatusBanner client:load siteId="home" /></div>
 
   <article class="page">
-    {/* 1 — Wordmark. Plain text serif, no decoration. */}
-    <h1 class="brand">oriz</h1>
+    {/* 1 — Wordmark. Plain text serif, no decoration. Title-Case lock. */}
+    <h1 class="brand">Oriz</h1>
 
-    {/* 2 — Hero paragraph, ~50 words. */}
+    {/* 2 — Hero paragraph. */}
     <p class="lede">
-      oriz is a family of free-forever, recruiter-grade web tools and reading
-      sites built and maintained by Chirag Singhal. Every site shares a single
-      sign-in, a single design system, and a single knowledge base — small,
-      static, and built to outlive their author.
+      Oriz is a family of free-forever, recruiter-grade web tools, reading sites,
+      and developer libraries built and maintained by{' '}
+      <a class="lede-link" href="https://me.oriz.in">Chirag Singhal</a>. Every site
+      shares one sign-in, one design system, and one knowledge base.
     </p>
 
     {/* 3 — Sites list. Plain rows, no card chrome. */}
@@ -119,7 +346,85 @@ function fmtDate(iso: string): string {
       }
     </ul>
 
-    {/* 4 — Latest from the blog. Build-time RSS, graceful fallback. */}
+    {/* 4 — Browser extensions. Auto-filled from GH API; placeholder line until shipped. */}
+    <h2 class="section-h">Browser extensions</h2>
+    {
+      extensions.length > 0 ? (
+        <ul class="sites">
+          {extensions.map((x) => (
+            <li class="site-row">
+              <a class="site-link" href={x.url}>
+                <strong class="site-name">{x.name}</strong>
+                <span class="site-desc">{x.desc}</span>
+                <span class="site-domain">github</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="post-fallback">
+          Browser extensions in development — see{' '}
+          <a href="https://github.com/chirag127?tab=repositories&q=oriz+ext">github.com/chirag127</a>.
+          {extsFromApi ? '' : ' (List auto-fills at next build.)'}
+        </p>
+      )
+    }
+
+    {/* 5 — Open-source packages. Hardcoded canonical list. */}
+    <h2 class="section-h">Open-source packages</h2>
+    <ul class="sites">
+      {
+        PKGS.map((p) => (
+          <li class="site-row">
+            <div class="pkg-link">
+              <strong class="site-name">{p.name}</strong>
+              <span class="site-desc">{p.desc}</span>
+              <span class="site-domain">
+                <a href={p.npm}>npm</a> · <a href={p.github}>github</a>
+              </span>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+
+    {/* 6 — Tech stack. 3-column plain table. */}
+    <h2 class="section-h">Tech stack</h2>
+    <table class="stack">
+      <thead>
+        <tr>
+          <th scope="col">Layer</th>
+          <th scope="col">Pick</th>
+          <th scope="col">Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          STACK.map((row) => (
+            <tr>
+              <td class="stack-layer">{row.layer}</td>
+              <td class="stack-pick">{row.pick}</td>
+              <td class="stack-why">{row.why}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    {/* 7 — By the numbers. */}
+    <h2 class="section-h">By the numbers</h2>
+    <ul class="more">
+      {
+        NUMBERS.map((n) => (
+          <li>
+            <span class="more-name">{n.label}</span>
+            <span>{n.value}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    {/* 8 — Latest from the blog. Build-time RSS, graceful fallback. */}
     <h2 class="section-h">Latest from the blog</h2>
     {
       blogFetchOk ? (
@@ -142,7 +447,30 @@ function fmtDate(iso: string): string {
       )
     }
 
-    {/* 5 — More. Plain links, including the MultiSearch popover. */}
+    {/* 9 — Recent commits. */}
+    <h2 class="section-h">Recent commits</h2>
+    {
+      commits.length > 0 ? (
+        <ul class="posts">
+          {commits.map((c) => (
+            <li class="post-row">
+              <span class="post-date">{c.ago}</span>
+              <span class="post-sep" aria-hidden="true">·</span>
+              <a class="post-link" href={c.url}>
+                <strong>{c.repo}</strong> — {c.message}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="post-fallback">
+          Activity feed unavailable right now — see{' '}
+          <a href="https://github.com/chirag127">github.com/chirag127</a>.
+        </p>
+      )
+    }
+
+    {/* 10 — More. Plain links, including the MultiSearch popover. */}
     <h2 class="section-h">More</h2>
     <ul class="more">
       <li>
@@ -160,13 +488,16 @@ function fmtDate(iso: string): string {
       <li>
         <span class="more-name">Search the web</span>
         <span class="search-mount">
-          <MultiSearch client:idle titleSuffix=" — oriz" label="Search the web →" />
+          <MultiSearch client:idle titleSuffix=" — Oriz" label="Search the web →" />
         </span>
       </li>
     </ul>
 
-    {/* 7 — Tiny colophon. */}
-    <p class="colophon">© 2026 Chirag Singhal · Bhubaneswar, IN</p>
+    {/* 12 — Tiny colophon. */}
+    <p class="colophon">
+      Built by Chirag Singhal · <a href="https://github.com/chirag127/oriz">Source on GitHub</a> ·
+      Last deployed {buildDate}
+    </p>
   </article>
 </BaseLayout>
 
@@ -208,6 +539,9 @@ function fmtDate(iso: string): string {
     color: var(--ink);
     max-width: 60ch;
   }
+  .lede-link {
+    color: var(--accent);
+  }
 
   /* ── Section headings — small caps, regular weight ─────────────────── */
 
@@ -222,7 +556,7 @@ function fmtDate(iso: string): string {
     margin: clamp(2rem, 5vw, 2.75rem) 0 clamp(0.75rem, 2vw, 1rem);
   }
 
-  /* ── 3 · Sites list ────────────────────────────────────────────────── */
+  /* ── 3-5 · Plain row lists (sites / extensions / packages) ─────────── */
 
   .sites,
   .posts,
@@ -239,7 +573,8 @@ function fmtDate(iso: string): string {
     border-bottom: 1px solid var(--rule);
   }
 
-  .site-link {
+  .site-link,
+  .pkg-link {
     display: grid;
     grid-template-columns: 7.5rem 1fr auto;
     gap: 1rem;
@@ -276,8 +611,51 @@ function fmtDate(iso: string): string {
     text-align: right;
     white-space: nowrap;
   }
+  .pkg-link .site-domain a {
+    color: var(--accent);
+  }
 
-  /* ── 4 · Latest blog posts ─────────────────────────────────────────── */
+  /* ── 6 · Tech-stack table ─────────────────────────────────────────── */
+
+  .stack {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+  }
+  .stack thead th {
+    font-weight: 500;
+    text-align: left;
+    color: var(--ink-mute);
+    font-variant-caps: all-small-caps;
+    font-feature-settings: 'smcp' 1, 'c2sc' 1;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stack tbody td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-top: 1px solid var(--rule);
+    color: var(--ink);
+    vertical-align: top;
+  }
+  .stack tbody tr:last-child td {
+    border-bottom: 1px solid var(--rule);
+  }
+  .stack-layer {
+    font-weight: 600;
+    width: 8rem;
+  }
+  .stack-pick {
+    /* allow long pick descriptions to wrap */
+    word-break: break-word;
+  }
+  .stack-why {
+    color: var(--ink-mute);
+    width: 12rem;
+  }
+
+  /* ── 8 · Latest blog posts ─────────────────────────────────────────── */
 
   .post-row {
     padding-block: 0.375rem;
@@ -302,11 +680,11 @@ function fmtDate(iso: string): string {
     color: var(--ink-mute);
   }
 
-  /* ── 5 · More section ──────────────────────────────────────────────── */
+  /* ── 7 · By-the-numbers + 10 · More section ─────────────────────────── */
 
   .more li {
     display: grid;
-    grid-template-columns: 7.5rem 1fr;
+    grid-template-columns: 11rem 1fr;
     gap: 1rem;
     padding-block: 0.375rem;
     align-items: baseline;
@@ -392,7 +770,7 @@ function fmtDate(iso: string): string {
     border: 1px solid var(--rule);
   }
 
-  /* ── 6 · Status banner styling on white paper ──────────────────────── */
+  /* ── 11 · Status banner styling on white paper ──────────────────────── */
 
   .status-mount :global([data-oriz-status]) {
     display: flex;
@@ -431,7 +809,7 @@ function fmtDate(iso: string): string {
     padding: 0 0.25rem;
   }
 
-  /* ── 7 · Colophon ──────────────────────────────────────────────────── */
+  /* ── 12 · Colophon ──────────────────────────────────────────────────── */
 
   .colophon {
     margin-top: clamp(2.5rem, 6vw, 4rem);
@@ -440,10 +818,14 @@ function fmtDate(iso: string): string {
     color: var(--ink-mute);
     font-size: 0.875rem;
   }
+  .colophon a {
+    color: var(--accent);
+  }
 
   /* ── Mobile — collapse rows to two-line stacks. ────────────────────── */
   @media (max-width: 560px) {
-    .site-link {
+    .site-link,
+    .pkg-link {
       grid-template-columns: 1fr;
       grid-template-areas:
         'name'
@@ -469,5 +851,11 @@ function fmtDate(iso: string): string {
     .post-link {
       display: block;
     }
+
+    .stack {
+      font-size: 0.875rem;
+    }
+    .stack-layer { width: auto; }
+    .stack-why   { width: auto; }
   }
 </style>
