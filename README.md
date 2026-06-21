@@ -1,33 +1,43 @@
-# oriz-home
+# Oriz Home — Hub
 
-Landing site for the oriz family — `oriz.in`.
+> Landing site for the oriz family — the apex hub that links every `*.oriz.in` site together.
 
-- Astro 6 (static output) + React 19 + Tailwind v4
-- Firebase Auth (shared `oriz-app` project across all `*.oriz.in` sites)
-- Hosted on Cloudflare Pages
-- AdSense-ready
+**Live at**: https://oriz.in · **Status**: production
 
-## Pages
+## What this is
 
-- `/` — landing
-- `/sites/` — every site in the family
-- `/about/` — author bio
-- `/contact/` — contact form (Web3Forms)
-- `/account/` — sign-in via Firebase (Google, GitHub, Email-link, Anonymous)
-- `/account/finish-sign-in/` — email-link completion
-- `/legal/{privacy,terms,disclaimer,cookies,grievance}/`
+The apex of the oriz family. It hosts the brand landing page, the catalogue of every site in the family, and the shared sign-in entry point. Every other `*.oriz.in` domain points back to here as the canonical hub.
 
-## Develop
+## Per-feature inventory
+
+| Feature | Status |
+|---|---|
+| `/` landing | ✅ live |
+| `/sites/` family catalogue | ✅ live |
+| `/about/` author bio | ✅ live |
+| `/contact/` contact form | ✅ live |
+| `/account/` shared sign-in (Google, GitHub, Email-link, Anonymous) | ✅ live |
+| `/account/finish-sign-in/` email-link callback | ✅ live |
+| `/legal/{privacy,terms,disclaimer,cookies,grievance}/` | ✅ live |
+| `/links/`, `/support/` | ✅ live |
+| Cross-site `⌘K` MultiSearch | ✅ live |
+| StatusBanner (auto from `status.oriz.in`) | ✅ live |
+
+## App-specific env vars
+
+None beyond the family-wide set at `templates/.env.example`.
+
+## Local dev
 
 ```bash
-pnpm install
-npx envpact-cli@0.2.0          # pull shared secrets from envpact vault
-pnpm dev                       # http://localhost:4321
+# from the workspace root (c:/D/oriz)
+pnpm -F @chirag127/oriz-home dev
 ```
 
-## Build + deploy
+## Knowledge
 
-```bash
-pnpm build
-pnpm deploy                    # wrangler deploy → oriz.in
-```
+See [`./knowledge/`](./knowledge/) for app-specific decisions, runbooks, and services. Family rules / decisions / architecture live at the master repo's [`knowledge/`](../../../../knowledge/).
+
+## License
+
+Source-available, all rights reserved. See master [`LICENSE`](../../../../LICENSE) — same terms across the family.

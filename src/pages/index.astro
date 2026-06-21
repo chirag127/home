@@ -16,9 +16,8 @@
  *   4. Browser extensions — auto-fed from GitHub API at build, filtered
  *      by `*-ext` / `*-vsc-ext` slug suffix per the family naming rule.
  *      Falls back to a placeholder line when none have shipped yet.
- *   5. Open-source packages — auto-fed from GitHub API + hardcoded
- *      fallback list of the seven `@chirag127/*` packages already
- *      registered as submodules under `packages/`.
+ *   5. Open-source packages — auto-fed from GitHub API. Hardcoded
+ *      fallback list is currently empty (in-flight).
  *   6. Tech stack — condensed 15-row digest of the canonical stack
  *      table at `knowledge/services/index.md`. Three columns: Layer,
  *      Pick, Why. No decoration.
@@ -141,56 +140,7 @@ interface PkgRow {
   github: string       // github.com URL
 }
 
-const PKGS: PkgRow[] = [
-  {
-    name: '@chirag127/astro-shell',
-    desc: 'Astro site shell — BaseLayout, head, footer, and family-wide nav primitives.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-shell',
-    github: 'https://github.com/chirag127/astro-shell',
-  },
-  {
-    name: '@chirag127/astro-chrome',
-    desc: 'Auth chrome — AccountPanel, FinishSignIn, sidebar drawer, sign-in islands.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-chrome',
-    github: 'https://github.com/chirag127/astro-chrome',
-  },
-  {
-    name: '@chirag127/astro-config',
-    desc: 'Shared Astro / Vite / TypeScript / biome config presets for every family site.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-config',
-    github: 'https://github.com/chirag127/astro-config',
-  },
-  {
-    name: '@chirag127/astro-data',
-    desc: 'Firebase + Firestore + Turso data layer with a singleton initialiser per app.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-data',
-    github: 'https://github.com/chirag127/astro-data',
-  },
-  {
-    name: '@chirag127/astro-forms',
-    desc: 'Web3Forms-backed contact form and form primitives with vendor-redundant fallback.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-forms',
-    github: 'https://github.com/chirag127/astro-forms',
-  },
-  {
-    name: '@chirag127/astro-icons',
-    desc: 'SVG icon set and Astro icon component tuned for the oriz family palette.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-icons',
-    github: 'https://github.com/chirag127/astro-icons',
-  },
-  {
-    name: '@chirag127/astro-tools',
-    desc: 'MultiSearch, StatusBanner, JsonLd, Image, Captcha — the cross-site utility islands.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-tools',
-    github: 'https://github.com/chirag127/astro-tools',
-  },
-  {
-    name: '@chirag127/astro-ai',
-    desc: 'Puter.js + Workers AI helpers — browser-first LLM islands with no API keys.',
-    npm: 'https://www.npmjs.com/package/@chirag127/astro-ai',
-    github: 'https://github.com/chirag127/astro-ai',
-  },
-]
+const PKGS: PkgRow[] = []
 
 /* ────────────────────────────────────────────────────────────────────
  * Tech stack — condensed 15-row table.
@@ -376,23 +326,30 @@ const buildDate = new Date().toLocaleDateString('en-US', { year: 'numeric', mont
       )
     }
 
-    {/* 5 — Open-source packages. Hardcoded canonical list. */}
+    {/* 5 — Open-source packages. Empty by default; will refill as packages publish. */}
     <h2 class="section-h">Open-source packages</h2>
-    <ul class="sites">
-      {
-        PKGS.map((p) => (
-          <li class="site-row">
-            <div class="pkg-link">
-              <strong class="site-name">{p.name}</strong>
-              <span class="site-desc">{p.desc}</span>
-              <span class="site-domain">
-                <a href={p.npm}>npm</a> · <a href={p.github}>github</a>
-              </span>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
+    {
+      PKGS.length > 0 ? (
+        <ul class="sites">
+          {PKGS.map((p) => (
+            <li class="site-row">
+              <div class="pkg-link">
+                <strong class="site-name">{p.name}</strong>
+                <span class="site-desc">{p.desc}</span>
+                <span class="site-domain">
+                  <a href={p.npm}>npm</a> · <a href={p.github}>github</a>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="post-fallback">
+          Packages in development — see{' '}
+          <a href="https://github.com/chirag127?tab=repositories">github.com/chirag127</a>.
+        </p>
+      )
+    }
 
     {/* 6 — Tech stack. 3-column plain table. */}
     <h2 class="section-h">Tech stack</h2>
