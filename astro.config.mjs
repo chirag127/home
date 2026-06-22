@@ -3,6 +3,7 @@ import { shell } from '@chirag127/astro-shell/shell'
 
 export default shell({
   site: 'https://oriz.in',
+  base: process.env.PUBLIC_BASE_PATH ?? '/',
   includeMdx: false,
   // Cross-link the canonical apex sitemap from every family domain.
   // Per knowledge/decisions/architecture/seo-three-pillars.md, robots.txt
