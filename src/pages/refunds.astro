@@ -1,0 +1,10 @@
+---
+/*
+ * /refunds — thin wrapper around <Refunds /> from @chirag127/astro-chrome.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro'
+import Refunds from '@chirag127/astro-chrome/legal/Refunds.astro'
+---
+<BaseLayout title="Refunds — oriz" description="7-day money-back refund policy." canonical="https://oriz.in/refunds/" wordmarkSubtitle="refunds">
+  <Refunds appName="Oriz" appDomain="oriz.in" contactEmail="hello@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+</BaseLayout>

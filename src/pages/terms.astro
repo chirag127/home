@@ -1,0 +1,10 @@
+---
+/*
+ * /terms — thin wrapper around <Terms /> from @chirag127/astro-chrome.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro'
+import Terms from '@chirag127/astro-chrome/legal/Terms.astro'
+---
+<BaseLayout title="Terms — oriz" description="Terms of service for oriz.in." canonical="https://oriz.in/terms/" wordmarkSubtitle="terms">
+  <Terms appName="Oriz" appDomain="oriz.in" contactEmail="privacy@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+</BaseLayout>

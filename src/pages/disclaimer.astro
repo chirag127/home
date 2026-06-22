@@ -1,0 +1,10 @@
+---
+/*
+ * /disclaimer — thin wrapper around <Disclaimer /> from @chirag127/astro-chrome.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro'
+import Disclaimer from '@chirag127/astro-chrome/legal/Disclaimer.astro'
+---
+<BaseLayout title="Disclaimer — oriz" description="Financial / health / educational disclaimers." canonical="https://oriz.in/disclaimer/" wordmarkSubtitle="disclaimer">
+  <Disclaimer appName="Oriz" appDomain="oriz.in" contactEmail="hello@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+</BaseLayout>

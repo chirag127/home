@@ -1,0 +1,6 @@
+# Security contact for Oriz (oriz.in)
+Contact: mailto:security@oriz.in
+Expires: 2027-06-22T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://oriz.in/.well-known/security.txt
+Policy: https://oriz.in/disclaimer/
