@@ -1,0 +1,78 @@
+---
+/*
+ * LatestBookCard — top-1 from the family Books list. v0 = hardcoded
+ * "Coming soon" placeholder (matches the existing /books grid status).
+ *
+ * When the first book ships, promote this to read from
+ * `data/latest.json` (committed) or the book-app's feed.
+ */
+const LATEST_BOOK = {
+  title: 'The Stack',
+  author: 'Chirag Singhal',
+  status: 'Coming soon',
+  url: 'https://books.oriz.in/',
+}
+---
+
+<article class="fc fc-book">
+  <header class="fc-h">
+    <span class="fc-kicker">Latest book</span>
+    <a class="fc-more" href="/books/">Books →</a>
+  </header>
+  <div class="fc-book-row">
+    <div class="fc-book-cover" aria-hidden="true">
+      <span>{LATEST_BOOK.title}</span>
+    </div>
+    <div class="fc-book-meta">
+      <h3 class="fc-title">
+        <a href={LATEST_BOOK.url}>{LATEST_BOOK.title}</a>
+      </h3>
+      <p class="fc-book-author">{LATEST_BOOK.author}</p>
+      <p class="fc-book-status">{LATEST_BOOK.status}</p>
+    </div>
+  </div>
+</article>
+
+<style>
+  .fc-book {
+    background: #fff;
+    border-left: 3px solid var(--color-ochre, #c68e17);
+  }
+  .fc-book-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0.75rem;
+    align-items: start;
+  }
+  .fc-book-cover {
+    aspect-ratio: 2 / 3;
+    width: 56px;
+    background:
+      radial-gradient(120% 80% at 30% 20%, color-mix(in oklab, var(--color-ochre, #c68e17) 60%, var(--color-accent)) 0%, var(--color-accent) 70%);
+    color: #fff;
+    display: flex;
+    align-items: flex-end;
+    padding: 0.25rem;
+    font-family: var(--font-display);
+    font-size: 0.625rem;
+    line-height: 1.05;
+    border: 1px solid var(--color-border);
+  }
+  .fc-book-meta {
+    min-width: 0;
+  }
+  .fc-book-author {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    margin: 0.125rem 0 0;
+  }
+  .fc-book-status {
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin: 0.25rem 0 0;
+  }
+</style>

@@ -18,6 +18,7 @@
  * prefers-reduced-motion. Letters fade-in + wave through font-weight 300→900.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
+import FeaturePanel from '~/components/FeaturePanel.astro'
 
 /* ── 2 · Apps ────────────────────────────────────────────────────────── */
 const APP_CARDS = [
@@ -91,31 +92,35 @@ const PKG_SLUGS = [
 <BaseLayout
   title="Oriz — a family of free-forever apps, tools, books, and packages"
   description="Oriz is a self-built family of free apps, tools, content sites, books, and open-source packages by Chirag Singhal. One sign-in, one design system, one knowledge base."
+  sidebar={false}
 >
   <article class="home spine">
-    {/* ── 1 · Hero ─────────────────────────────────────────────────── */}
-    <section class="hero" aria-label="Oriz family">
-      <h1 class="wm" aria-label="oriz">
-        <span class="wm-letter" data-i="0">o</span><span
-          class="wm-letter" data-i="1">r</span><span class="wm-letter" data-i="2">i</span><span
-          class="wm-letter wm-z" data-i="3">z</span>
-      </h1>
-      <p class="tagline">
-        A self-built family of <em>free tools, content, and books</em>.
-        <br />
-        <span class="tagline-mute">For developers, the curious, and everyone in between.</span>
-      </p>
-      <form class="search" role="search" onsubmit="event.preventDefault()">
-        <label class="visually-hidden" for="oriz-search">Search the Oriz family</label>
-        <span class="search-icon" aria-hidden="true">⌕</span>
-        <input
-          id="oriz-search"
-          type="search"
-          autocomplete="off"
-          placeholder="Search apps, books, packages…"
-        />
-        <kbd class="search-kbd" aria-hidden="true">/</kbd>
-      </form>
+    {/* ── 1 · Hero + Feature panel (2-col on desktop, stacked on mobile) ── */}
+    <section class="hero-row" aria-label="Oriz family">
+      <div class="hero">
+        <h1 class="wm" aria-label="oriz">
+          <span class="wm-letter" data-i="0">o</span><span
+            class="wm-letter" data-i="1">r</span><span class="wm-letter" data-i="2">i</span><span
+            class="wm-letter wm-z" data-i="3">z</span>
+        </h1>
+        <p class="tagline">
+          A self-built family of <em>free tools, content, and books</em>.
+          <br />
+          <span class="tagline-mute">For developers, the curious, and everyone in between.</span>
+        </p>
+        <form class="search" role="search" onsubmit="event.preventDefault()">
+          <label class="visually-hidden" for="oriz-search">Search the Oriz family</label>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="oriz-search"
+            type="search"
+            autocomplete="off"
+            placeholder="Search apps, books, packages…"
+          />
+          <kbd class="search-kbd" aria-hidden="true">/</kbd>
+        </form>
+      </div>
+      <FeaturePanel />
     </section>
 
     {/* ── 2 · Apps ─────────────────────────────────────────────────── */}
@@ -279,9 +284,26 @@ const PKG_SLUGS = [
 
   /* ── 1 · Hero ─────────────────────────────────────────────────────── */
 
-  .hero {
+  /*
+   * Desktop: 2-col grid — centered hero on the left, feature panel right.
+   * Mobile (<1024px): single column, panel stacks below hero.
+   */
+  .hero-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    align-items: start;
     padding-block: clamp(2rem, 8vw, 5rem) clamp(2rem, 6vw, 4rem);
+  }
+  @media (max-width: 1023px) {
+    .hero-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .hero {
     text-align: center;
+    min-width: 0;
   }
   .wm {
     font-family: var(--font-display);

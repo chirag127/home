@@ -1,0 +1,117 @@
+---
+/*
+ * LiveCounter — family scoreboard. Counts apps + packages + books and
+ * animates a count-up on load via Motion One. Respects
+ * prefers-reduced-motion.
+ *
+ * v0 numbers locked at build time from this page's own arrays + the
+ * project's known book count. Promote to a real data join later.
+ */
+const APPS = 25
+const PACKAGES = 22
+const BOOKS = 5
+const TOTAL = APPS + PACKAGES + BOOKS
+---
+
+<article class="fc fc-counter" data-live-counter>
+  <header class="fc-h">
+    <span class="fc-kicker">Family at a glance</span>
+  </header>
+  <ul class="fc-counter-grid">
+    <li>
+      <span class="fc-counter-n" data-target={APPS}>0</span>
+      <span class="fc-counter-l">apps</span>
+    </li>
+    <li>
+      <span class="fc-counter-n" data-target={PACKAGES}>0</span>
+      <span class="fc-counter-l">packages</span>
+    </li>
+    <li>
+      <span class="fc-counter-n" data-target={BOOKS}>0</span>
+      <span class="fc-counter-l">books</span>
+    </li>
+    <li class="fc-counter-total">
+      <span class="fc-counter-n" data-target={TOTAL}>0</span>
+      <span class="fc-counter-l">total</span>
+    </li>
+  </ul>
+</article>
+
+<script>
+  /* Count-up via Motion One. Reduced-motion → set the final values directly. */
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const nums = document.querySelectorAll<HTMLElement>('[data-live-counter] .fc-counter-n')
+
+  if (nums.length === 0) {
+    // nothing to do
+  } else if (reduce) {
+    for (const el of nums) el.textContent = String(el.dataset.target ?? '0')
+  } else {
+    import('motion')
+      .then(({ animate }) => {
+        for (const el of nums) {
+          const target = Number(el.dataset.target ?? 0)
+          animate(
+            { value: 0 },
+            { value: target },
+            {
+              duration: 1.2,
+              ease: [0.2, 0.7, 0.2, 1],
+              onUpdate: (latest: { value: number } | number) => {
+                const v =
+                  typeof latest === 'number'
+                    ? latest
+                    : (latest as { value: number }).value
+                el.textContent = String(Math.round(v))
+              },
+            },
+          )
+        }
+      })
+      .catch(() => {
+        for (const el of nums) el.textContent = String(el.dataset.target ?? '0')
+      })
+  }
+</script>
+
+<style>
+  .fc-counter {
+    background: var(--color-fg);
+    color: var(--color-bg);
+    border-left: 3px solid var(--color-accent);
+  }
+  .fc-counter .fc-kicker {
+    color: color-mix(in oklab, var(--color-bg) 70%, var(--color-fg));
+  }
+  .fc-counter-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem 1rem;
+  }
+  .fc-counter-grid li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .fc-counter-n {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--color-bg);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-counter-total .fc-counter-n {
+    color: var(--color-accent);
+  }
+  .fc-counter-l {
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: color-mix(in oklab, var(--color-bg) 65%, var(--color-fg));
+  }
+</style>
