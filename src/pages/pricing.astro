@@ -1,103 +1,46 @@
 ---
 /*
- * /pricing — placeholder v0 pricing page (2026-06-22).
+ * /pricing — THE canonical pricing surface for the entire oriz family.
  *
- * TODO: replace the inline three-tier table below with
- *   `import { Pricing } from '@chirag127/astro-billing'`
- * once the package exports a Pricing component. The package is in the
- * deps tree (see `package.json`) but its current export shape is
- * unverified; rather than break the build on a missing named export we
- * render a v0 static table that matches the family pricing posture.
+ * User mandate (2026-06-22): payments only on oriz.in. Razorpay
+ * approved this single domain as the business website, so every
+ * other app's "Upgrade" link redirects here (see `pricingUrl()` in
+ * @chirag127/astro-shell).
  *
- * Tiers (per knowledge/decisions/business/pricing-three-tiers.md):
- *   Free      — every app, every package, no card, no quota.
- *   Supporter — $5/mo (or $50/yr) optional donation, perks: priority issues.
- *   Sponsor   — $25/mo enterprise tier with a logo slot on /about.
- *
- * BaseLayout chrome="full" so the family Header + Footer + BottomBar
- * stay consistent with /apps and /books.
+ * The 3-tier table + monthly/yearly toggle + Razorpay Checkout JS
+ * islands all live in <Pricing /> from @chirag127/astro-billing.
+ * This page is purely a mount point.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-
-const TIERS: { name: string; price: string; sub: string; cta: string; href: string; perks: string[] }[] = [
-  {
-    name: 'Free',
-    price: '$0',
-    sub: 'forever',
-    cta: 'Use any app →',
-    href: '/apps/',
-    perks: [
-      'Every app, every package',
-      'No card, no quota, no upsell',
-      'Open source, MIT licensed',
-      'Sign in with Google or email',
-    ],
-  },
-  {
-    name: 'Supporter',
-    price: '$5',
-    sub: '/ month',
-    cta: 'Become a Supporter →',
-    href: 'https://github.com/sponsors/chirag127',
-    perks: [
-      'Priority issue triage',
-      'Supporter badge on /about',
-      'Early access to drafts',
-      'Cancel any time',
-    ],
-  },
-  {
-    name: 'Sponsor',
-    price: '$25',
-    sub: '/ month',
-    cta: 'Become a Sponsor →',
-    href: 'https://github.com/sponsors/chirag127',
-    perks: [
-      'Logo slot on /about',
-      'Quarterly architecture review',
-      'Direct email to maintainer',
-      'Everything in Supporter',
-    ],
-  },
-]
+import Pricing from '@chirag127/astro-billing/Pricing.astro'
 ---
 
 <BaseLayout
   title="Pricing — Oriz"
-  description="Oriz is free forever. Optional Supporter and Sponsor tiers fund maintenance — never a paywall."
+  description="Free forever, with optional Pro (₹99/mo) and Max (₹299/mo) tiers. Pay once, unlocks every app in the family."
   wordmarkSubtitle="pricing"
   sidebar={false}
 >
   <article class="page spine">
     <h1 class="page-title">Pricing</h1>
     <p class="page-lede">
-      Every app and every package in the Oriz family is free, forever. Supporter and
-      Sponsor tiers are entirely optional — they fund maintenance, not features.
+      Every app and every package in the Oriz family stays free. Pro and Max are optional —
+      one subscription unlocks Pro features across <a href="/apps/">all apps</a>,
+      removes ads, and funds maintenance.
     </p>
 
-    <div class="tier-grid">
-      {TIERS.map((t) => (
-        <section class="tier">
-          <h2 class="tier-name">{t.name}</h2>
-          <p class="tier-price"><span class="big">{t.price}</span> <span class="sub">{t.sub}</span></p>
-          <ul class="tier-perks">
-            {t.perks.map((p) => <li>{p}</li>)}
-          </ul>
-          <a class="tier-cta" href={t.href}>{t.cta}</a>
-        </section>
-      ))}
-    </div>
+    <Pricing />
 
     <p class="note">
-      No paywalls, ever. See <a href="/about/">/about</a> for the funding model and
-      <a href="https://github.com/sponsors/chirag127">GitHub Sponsors</a> for the live tier list.
+      Questions about billing? See <a href="/refunds/">refunds</a> and <a href="/terms/">terms</a>.
+      All transactions on this page are processed by Razorpay on <code>oriz.in</code>.
     </p>
   </article>
 </BaseLayout>
 
 <style>
   .page {
-    max-width: 960px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem);
   }
@@ -115,53 +58,14 @@ const TIERS: { name: string; price: string; sub: string; cta: string; href: stri
     max-width: 60ch;
     margin: 0 0 2rem;
   }
-  .tier-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin: 1.5rem 0;
-  }
-  .tier {
-    border: 1px solid var(--rule);
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: var(--paper);
-  }
-  .tier-name {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1.25rem;
-    margin: 0;
-  }
-  .tier-price .big {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 600;
-  }
-  .tier-price .sub {
-    color: var(--ink-mute);
-    font-size: 0.9375rem;
-  }
-  .tier-perks {
-    list-style: disc inside;
-    padding: 0;
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    line-height: 1.55;
-    color: var(--ink);
-  }
-  .tier-cta {
-    margin-top: auto;
-    color: var(--accent, var(--mustard));
-    font-family: var(--font-display);
-    font-weight: 500;
-  }
   .note {
     margin-top: 2rem;
     color: var(--ink-mute);
     font-size: 0.9375rem;
+  }
+  .note code {
+    background: var(--rule);
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
   }
 </style>
