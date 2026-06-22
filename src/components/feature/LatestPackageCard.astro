@@ -2,16 +2,30 @@
 /*
  * LatestPackageCard — top-1 from @chirag127/* npm packages.
  *
- * v0 lazy: hardcoded latest package + version. Promote to a build-time
- * fetch from the npm registry (`https://registry.npmjs.org/-/v1/search?text=maintainer:chirag127`)
- * or the packages-catalog data file once it stabilises.
+ * Reads from the dynamic family-data registry (@chirag127/astro-shell/family-data),
+ * picks the highest-version astro-shell entry by default (the foundation
+ * package), and renders the card. Updating the package version anywhere
+ * in the family auto-flows here via the daily discover-family cron +
+ * Renovate dep bump.
  */
+import { FAMILY_PACKAGES, type FamilyPackage } from '@chirag127/astro-shell/family-data'
+
+/* Pick astro-shell as the headline; fall back to the first astro-category entry. */
+function pickHeadline(): FamilyPackage {
+  return (
+    FAMILY_PACKAGES.find((p) => p.slug === 'astro-shell') ??
+    FAMILY_PACKAGES.find((p) => p.category === 'astro') ??
+    FAMILY_PACKAGES[0]
+  )
+}
+
+const pkg = pickHeadline()
 const LATEST_PKG = {
-  name: '@chirag127/astro-shell',
-  short: 'astro-shell',
-  version: '0.1.3',
-  blurb: 'The shared Astro shell — design tokens, layout primitives, and chrome.',
-  url: 'https://npm.im/@chirag127/astro-shell',
+  name: pkg.npm,
+  short: pkg.slug,
+  version: pkg.version ?? '',
+  blurb: pkg.tagline ?? 'A package from the chirag127/oriz family.',
+  url: `https://npm.im/${pkg.npm}`,
 }
 ---
 
@@ -22,7 +36,7 @@ const LATEST_PKG = {
   </header>
   <h3 class="fc-title">
     <a href={LATEST_PKG.url}>{LATEST_PKG.short}</a>
-    <span class="fc-pkg-v">v{LATEST_PKG.version}</span>
+    {LATEST_PKG.version && <span class="fc-pkg-v">v{LATEST_PKG.version}</span>}
   </h3>
   <p class="fc-excerpt">{LATEST_PKG.blurb}</p>
   <pre class="fc-pkg-cmd"><code>npm i {LATEST_PKG.name}</code></pre>
