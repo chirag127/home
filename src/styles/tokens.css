@@ -1,0 +1,74 @@
+/*
+ * tokens.css — locked design palette + type stack (2026-06-22).
+ *
+ * Per the v0 brief: paper bg, vermilion accent, Fraunces display +
+ * Inter body + JetBrains Mono utility. Names are kept family-wide;
+ * VALUES are overridden here.
+ *
+ * Imported AFTER global.css + oriz-ui-overrides.css so these values win.
+ */
+
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+  /* Locked palette */
+  --color-bg: #f8f4ed;           /* paper */
+  --color-fg: #08090b;           /* ink */
+  --color-accent: #e0492f;       /* vermilion */
+  --color-muted: #525252;        /* steel */
+  --color-ochre: #c68e17;
+  --color-border: rgba(8, 9, 11, 0.12);
+
+  /* Aliases the family-wide tokens (global.css/oriz-ui-overrides) read from.
+     We OVERRIDE existing names — paper/ink/etc. */
+  --paper: var(--color-bg);
+  --paper-deep: var(--color-bg);
+  --ink: var(--color-fg);
+  --ink-mute: var(--color-muted);
+  --rule: var(--color-border);
+  --mustard: var(--color-ochre);
+  --vermilion: var(--color-accent);
+  --ledger: var(--color-muted);
+  --highlighter: var(--color-ochre);
+
+  /* Type stack */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-utility: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+
+  /* Back-compat with global.css */
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-utility);
+}
+
+/* Force ONE theme — no dark-mode override. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light;
+    --paper: var(--color-bg);
+    --ink: var(--color-fg);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --paper: var(--color-bg);
+    --ink: var(--color-fg);
+  }
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+}
+
+/* Default link colour family-wide — vermilion. */
+a {
+  color: var(--color-accent);
+}

@@ -170,15 +170,15 @@ const APPS_STATIC: AppMeta[] = [
     packages: ['@chirag127/oriz-ui'],
   },
   {
-    slug: 'oriz-tabs-cards-app',
-    brand: 'Tabs',
+    slug: 'oriz-financial-cards-app',
+    brand: 'Financial Cards',
     oneLine:
-      'India card intelligence — credit, debit, and prepaid card profiles for every major Indian issuer.',
+      'India financial card intelligence — credit, debit, prepaid, travel/forex, and corporate card profiles for every major Indian issuer.',
     category: 'content',
-    subdomain: 'https://cards.oriz.in',
-    repo: 'chirag127/oriz-tabs-cards-app',
+    subdomain: 'https://financial-cards.oriz.in',
+    repo: 'chirag127/oriz-financial-cards-app',
     status: 'production',
-    channels: { web: 'https://cards.oriz.in' },
+    channels: { web: 'https://financial-cards.oriz.in' },
     packages: [],
   },
 

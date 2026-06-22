@@ -1,905 +1,634 @@
 ---
 /*
- * Oriz / home — index page (Alphabet-style parent-company landing).
+ * oriz / home — index page (v0 locked design 2026-06-22).
  *
- * Modeled after https://abc.xyz — pure white background, single ~720px
- * centered column, serif everywhere, no header/footer chrome, plain rows
- * of subsidiary sites. The CONTENT, however, has been expanded so a
- * recruiter / collaborator landing here for the first time forms an
- * accurate picture of the depth of work behind the family in <5 seconds.
+ * Sections in order per the brief:
+ *   1. Hero        — MASSIVE animated wordmark (Fraunces, 12rem clamp) + tagline
+ *                    + family-wide unified search bar (UI only, no live search yet).
+ *   2. /apps       — 5 cards (home, blog, ncert, janaushdhi, packages).
+ *   3. /tools      — 16 tool subdomains (slug + domain), 4-col compact grid.
+ *   4. /books      — 5 placeholder books, "Coming soon".
+ *   5. /packages   — 23 @chirag127/*-npm-pkg slugs (4-col grid → npm.im links).
+ *   6. /me         — single card → me.oriz.in.
  *
- * Bands on the page (top → bottom):
- *   1. Wordmark (`Oriz`) — large serif, top-left. Title-Case per
- *      `knowledge/decisions/branding/title-case-oriz.md`.
- *   2. One-paragraph hero — what Oriz is + who built it.
- *   3. Sites — the 10 family sites (this page itself excluded).
- *   4. Browser extensions — auto-fed from GitHub API at build, filtered
- *      by `*-ext` / `*-vsc-ext` slug suffix per the family naming rule.
- *      Falls back to a placeholder line when none have shipped yet.
- *   5. Open-source packages — auto-fed from GitHub API. Hardcoded
- *      fallback list is currently empty (in-flight).
- *   6. Tech stack — condensed 15-row digest of the canonical stack
- *      table at `knowledge/services/index.md`. Three columns: Layer,
- *      Pick, Why. No decoration.
- *   7. By the numbers — small metric strip (repos, concept files,
- *      sites, languages, years building). Build-time fetched where
- *      possible, hardcoded fallback otherwise.
- *   8. Latest from the blog — 5 most recent posts pulled from
- *      `https://blog.oriz.in/rss.xml` at build time. Graceful fallback
- *      if the feed is missing (the blog may not be deployed yet).
- *   9. Recent commits — top 5 PushEvents from chirag127's public
- *      activity feed. Graceful fallback if rate-limited.
- *  10. More — GitHub, Support, Privacy, Search the web (MultiSearch).
- *  11. StatusBanner — invisible unless an incident is live.
- *  12. Tiny colophon line — keeps "small + plain" rule.
+ * Chrome = "full" → Header, Footer, Sidebar (drawer), BottomBar all render.
+ * Tokens overridden in ~/styles/tokens.css (paper #F8F4ED + vermilion #E0492F).
  *
- * BaseLayout is invoked with chrome="bare" (no Header / no Footer) and a
- * body class of "home-bare" which flips the global tokens to
- * white-paper / near-black-ink / serif-everywhere (see global.css).
- *
- * IMPLEMENTATION NOTE — every build-time API fetch is wrapped in
- * try/catch with hardcoded fallbacks. An offline build, a 60-req/h
- * GitHub-anonymous rate limit, or a transient DNS hiccup MUST NOT break
- * the production build. Astro's static build re-runs hourly via the CI
- * cron, so the data freshens without any client-side fetch cost.
+ * The wordmark wave animation uses Motion One (`motion`) with respect for
+ * prefers-reduced-motion. Letters fade-in + wave through font-weight 300→900.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import MultiSearch from '@chirag127/astro-chrome/MultiSearch'
-import StatusBanner from '@chirag127/astro-chrome/StatusBanner'
 
-import Parser from 'rss-parser'
-
-/* ────────────────────────────────────────────────────────────────────
- * Sites — the 10 sister-site rows.
- * Order matches the family directory; oriz-urls-to-md is intentionally
- * an empty placeholder (see decisions/branding/oriz-urls-to-md-site-empty-placeholder.md).
- * The current `home` slug is excluded (this IS the home page).
- * ──────────────────────────────────────────────────────────────────── */
-const SITES: { name: string; desc: string; domain: string; url: string }[] = [
-  { name: 'Blog',        desc: 'Long-form essays + tutorials.',     domain: 'blog.oriz.in',        url: 'https://blog.oriz.in' },
-  { name: 'Books',       desc: 'Reading log + book reviews.',       domain: 'books.oriz.in',       url: 'https://books.oriz.in' },
-  { name: 'Book Lore',   desc: 'Knowledge graph from books.',       domain: 'book-lore.oriz.in',   url: 'https://book-lore.oriz.in' },
-  { name: 'Cards',       desc: 'Spaced-repetition flashcards.',     domain: 'cards.oriz.in',       url: 'https://cards.oriz.in' },
-  { name: 'Finance',     desc: 'Personal finance dashboard.',       domain: 'finance.oriz.in',     url: 'https://finance.oriz.in' },
-  { name: 'Image Tools', desc: 'Browser image utilities.',          domain: 'image-tools.oriz.in', url: 'https://image-tools.oriz.in' },
-  { name: 'Journal',     desc: 'Daily journal.',                    domain: 'journal.oriz.in',     url: 'https://journal.oriz.in' },
-  { name: 'Me',          desc: 'Lifestream.',                       domain: 'me.oriz.in',          url: 'https://me.oriz.in' },
-  { name: 'PDF Tools',   desc: 'Browser PDF utilities.',            domain: 'pdf-tools.oriz.in',   url: 'https://pdf-tools.oriz.in' },
-  { name: 'URLs to MD',  desc: 'URL → clean Markdown.',             domain: 'urls-to-md.oriz.in',  url: 'https://urls-to-md.oriz.in' },
+/* ── 2 · Apps ────────────────────────────────────────────────────────── */
+const APP_CARDS = [
+  { name: 'Home',       desc: 'Family hub — every Oriz app in one place.',           host: 'oriz.in',          url: 'https://oriz.in' },
+  { name: 'Blog',       desc: 'Long-form essays on engineering, finance, books.',    host: 'blog.oriz.in',     url: 'https://blog.oriz.in' },
+  { name: 'NCERT',      desc: 'Free NCERT textbook directory — class · subject · language.', host: 'books.oriz.in', url: 'https://books.oriz.in' },
+  { name: 'Janaushdhi', desc: 'PMBJP generic-medicine catalog — search, compare, locate.', host: 'janaushdhi.oriz.in', url: 'https://janaushdhi.oriz.in' },
+  { name: 'Packages',   desc: 'Catalog of every @chirag127/* npm package.',          host: 'packages.oriz.in', url: 'https://packages.oriz.in' },
 ]
 
-/* ────────────────────────────────────────────────────────────────────
- * Build-time GitHub API helper — anonymous, gracefully tolerant.
- * ──────────────────────────────────────────────────────────────────── */
-interface GhRepo {
-  name: string
-  description: string | null
-  html_url: string
-  archived?: boolean
-  fork?: boolean
-}
-interface GhEvent {
-  type: string
-  repo: { name: string }
-  payload: { commits?: { message: string }[] }
-  created_at: string
-}
-
-async function ghFetch<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'oriz-home-build',
-      },
-    })
-    if (!res.ok) return null
-    return (await res.json()) as T
-  } catch {
-    return null
-  }
-}
-
-/* ────────────────────────────────────────────────────────────────────
- * Extensions — repos whose slug ends in `-ext` or `-vsc-ext`.
- * Hardcoded fallback list is empty today (no extensions shipped yet);
- * this auto-fills as soon as the first extension repo lands on GitHub.
- * ──────────────────────────────────────────────────────────────────── */
-interface ExtRow { name: string; desc: string; url: string }
-
-let extensions: ExtRow[] = []
-let extsFromApi = false
-{
-  const repos = await ghFetch<GhRepo[]>(
-    'https://api.github.com/users/chirag127/repos?per_page=100&sort=updated',
-  )
-  if (Array.isArray(repos)) {
-    extensions = repos
-      .filter((r) => !r.archived && !r.fork)
-      .filter((r) => /-(?:vsc-)?ext$/.test(r.name))
-      .map((r) => ({
-        name: r.name,
-        desc: r.description ?? '',
-        url: r.html_url,
-      }))
-    extsFromApi = true
-  }
-}
-
-/* ────────────────────────────────────────────────────────────────────
- * Open-source packages — start with the hardcoded family list (matches
- * `packages/` submodules in master `.gitmodules`), then OPT-IN augment
- * with anything else from the GitHub API that looks package-shaped.
- * Hardcoded list is the source of truth so an API miss still produces
- * a complete page.
- * ──────────────────────────────────────────────────────────────────── */
-interface PkgRow {
-  name: string         // npm-scoped name shown in-page
-  desc: string
-  npm: string          // npmjs.com URL
-  github: string       // github.com URL
-}
-
-const PKGS: PkgRow[] = []
-
-/* ────────────────────────────────────────────────────────────────────
- * Tech stack — condensed 15-row table.
- * Source: knowledge/services/index.md. Rows are intentionally short;
- * the canonical knowledge bundle is the deep-dive surface.
- * ──────────────────────────────────────────────────────────────────── */
-const STACK: { layer: string; pick: string; why: string }[] = [
-  { layer: 'Hosting',      pick: 'Cloudflare Pages',                                                          why: 'Free unlimited, edge CDN.' },
-  { layer: 'Edge compute', pick: 'Cloudflare Workers',                                                        why: '100K req/day free.' },
-  { layer: 'Auth',         pick: 'Firebase Auth (Spark)',                                                     why: 'Free unlimited.' },
-  { layer: 'Database',     pick: 'Firestore + Turso libSQL + Neon Postgres + JSONL canonical',                why: '4-tier strategy.' },
-  { layer: 'AI',           pick: 'Puter.js (browser) + Cloudflare Workers AI (server)',                       why: 'Free, no API keys.' },
-  { layer: 'Search',       pick: 'Algolia + Pagefind',                                                        why: 'Free 1M docs.' },
-  { layer: 'Analytics',    pick: 'CF Web Analytics + GA4 + PostHog + Microsoft Clarity + UTM',                why: '5-tier, all free.' },
-  { layer: 'Errors',       pick: 'Sentry',                                                                    why: 'Free 5K events/mo, env toggle.' },
-  { layer: 'Email',        pick: 'Resend (transactional) + EmailOctopus (marketing) + Buttondown (digest)',  why: 'All free.' },
-  { layer: 'Push',         pick: 'Firebase Cloud Messaging + Knock',                                          why: 'Free unlimited + 10K/mo.' },
-  { layer: 'Billing',      pick: 'Razorpay (India) + Lemon Squeezy (intl) + 10 donation rails',               why: 'Free, no card.' },
-  { layer: 'CMS',          pick: 'Markdown in Git',                                                           why: 'Zero infra.' },
-  { layer: 'Build',        pick: 'Astro 6 + React 19 + pnpm + GitHub Actions',                                why: 'OSS.' },
-  { layer: 'Code quality', pick: 'Sonarcloud + CodeRabbit + Codecov + CodeClimate + DeepSource + biome + Tokei', why: '9-tool stack.' },
-  { layer: 'Knowledge',    pick: 'OKF v0.1 bundle in `knowledge/`',                                           why: '200+ concept files.' },
+/* ── 3 · Tools ───────────────────────────────────────────────────────── */
+const TOOL_LIST = [
+  { slug: 'slice-pdf',     host: 'pdf.oriz.in' },
+  { slug: 'pixie-image',   host: 'image.oriz.in' },
+  { slug: 'scribe-text',   host: 'text.oriz.in' },
+  { slug: 'grid-qr',       host: 'qr.oriz.in' },
+  { slug: 'paisa-finance', host: 'finance.oriz.in' },
+  { slug: 'forge-dev',     host: 'dev.oriz.in' },
+  { slug: 'shift-convert', host: 'convert.oriz.in' },
+  { slug: 'dice-random',   host: 'random.oriz.in' },
+  { slug: 'cipher-crypto', host: 'crypto.oriz.in' },
+  { slug: 'paper-print',   host: 'print.oriz.in' },
+  { slug: 'vitals-health', host: 'health.oriz.in' },
+  { slug: 'rank-seo',      host: 'seo.oriz.in' },
+  { slug: 'reel-video',    host: 'video.oriz.in' },
+  { slug: 'echo-audio',    host: 'audio.oriz.in' },
+  { slug: 'pivot-data',    host: 'data.oriz.in' },
+  { slug: 'tbd-16',        host: 'tbd.oriz.in' },
 ]
 
-/* ────────────────────────────────────────────────────────────────────
- * By-the-numbers — auto-tracked metric strip.
- * Repo count comes from the GitHub API; concept count is hardcoded
- * (the build container doesn't necessarily mount the parent monorepo's
- * knowledge/ tree). Years-building is brand-locked at 2 years.
- * ──────────────────────────────────────────────────────────────────── */
-let repoCount = 60 // fallback
-{
-  const userMeta = await ghFetch<{ public_repos: number }>('https://api.github.com/users/chirag127')
-  if (userMeta && typeof userMeta.public_repos === 'number') {
-    repoCount = userMeta.public_repos
-  }
-}
-
-const NUMBERS: { label: string; value: string }[] = [
-  { label: 'Public repos',                value: String(repoCount) },
-  { label: 'Concept files in knowledge',  value: '430+' },
-  { label: 'Sites in family',             value: '10' },
-  { label: 'Languages',                   value: 'TypeScript · Astro · React · MDX' },
-  { label: 'Years building',              value: '2 (since 2024)' },
+/* ── 4 · Books ───────────────────────────────────────────────────────── */
+const BOOKS = [
+  { title: 'The Stack',          author: 'Chirag Singhal' },
+  { title: 'Paisa',              author: 'Chirag Singhal' },
+  { title: 'PDF: A Field Guide', author: 'Chirag Singhal' },
+  { title: 'Janaushdhi',         author: 'Chirag Singhal' },
+  { title: 'Me',                 author: 'Chirag Singhal' },
 ]
 
-/* ────────────────────────────────────────────────────────────────────
- * Latest 5 posts from the blog feed. Build-time fetch via rss-parser.
- * The blog site may not be deployed yet — wrap in try/catch and degrade
- * gracefully ("Blog launching soon — see github…"). Never let an RSS
- * failure break the build.
+/* ── 5 · Packages ─────────────────────────────────────────────────────
+ * 23 @chirag127/*-npm-pkg slugs — the npm scope drops the trailing `-npm-pkg`.
+ * Mirrors c:/D/oriz/projects/npm-packages.
  * ──────────────────────────────────────────────────────────────────── */
-interface Post {
-  title: string
-  link: string
-  pubDate: string
-}
-
-let posts: Post[] = []
-let blogFetchOk = false
-try {
-  const parser = new Parser({ timeout: 8000 })
-  const feed = await parser.parseURL('https://blog.oriz.in/rss.xml')
-  posts = (feed.items ?? []).slice(0, 5).map((i) => ({
-    title: i.title ?? '(untitled)',
-    link: i.link ?? 'https://blog.oriz.in',
-    pubDate: i.pubDate ?? i.isoDate ?? '',
-  }))
-  blogFetchOk = posts.length > 0
-} catch {
-  posts = []
-  blogFetchOk = false
-}
-
-/* ────────────────────────────────────────────────────────────────────
- * Recent commits — fold the user's public PushEvents into a 5-row
- * "what's been shipped lately" strip. Fail silently on rate-limit.
- * ──────────────────────────────────────────────────────────────────── */
-interface CommitRow { repo: string; message: string; ago: string; url: string }
-
-let commits: CommitRow[] = []
-{
-  const events = await ghFetch<GhEvent[]>(
-    'https://api.github.com/users/chirag127/events/public?per_page=30',
-  )
-  if (Array.isArray(events)) {
-    commits = events
-      .filter((e) => e.type === 'PushEvent' && Array.isArray(e.payload?.commits))
-      .flatMap((e) => {
-        const top = (e.payload.commits ?? [])[0]
-        if (!top) return []
-        const shortRepo = e.repo.name.replace(/^chirag127\//, '')
-        return [{
-          repo: shortRepo,
-          message: top.message.split('\n')[0],
-          ago: relativeTime(e.created_at),
-          url: `https://github.com/${e.repo.name}`,
-        }]
-      })
-      .slice(0, 5)
-  }
-}
-
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return ''
-  const sec = Math.max(0, (Date.now() - then) / 1000)
-  if (sec < 60) return `${Math.floor(sec)}s ago`
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`
-  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)}d ago`
-  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-}
-
-function fmtDate(iso: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-}
-
-const buildDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+const PKG_SLUGS = [
+  'astro-billing',
+  'astro-chrome',
+  'astro-content',
+  'astro-data',
+  'astro-distribute',
+  'astro-forms',
+  'astro-pwa',
+  'astro-shell',
+  'astro-test-utils',
+  'astro-tools',
+  'astro-widgets',
+  'auth-cli',
+  'auth-core',
+  'auth-vsc',
+  'auth-wxt',
+  'omni-publish',
+  'oriz-ai-providers',
+  'oriz-analytics',
+  'oriz-book-build',
+  'oriz-consent',
+  'oriz-rate-limit',
+  'oriz-seo',
+  'oriz-ui',
+]
 ---
 
 <BaseLayout
-  bodyClass="home-bare"
-  title="Oriz — a family of free-forever, recruiter-grade web tools"
-  description="Oriz is a family of free-forever, recruiter-grade web tools, reading sites, and developer libraries built and maintained by Chirag Singhal. Every site shares one sign-in, one design system, and one knowledge base."
+  title="Oriz — a family of free-forever apps, tools, books, and packages"
+  description="Oriz is a self-built family of free apps, tools, content sites, books, and open-source packages by Chirag Singhal. One sign-in, one design system, one knowledge base."
 >
-  {/* Status banner — renders nothing unless an active incident is live.
-      Gated behind PROD so dev doesn't hit DNS for unprovisioned subdomains. */}
-  {import.meta.env.PROD && (
-    <div class="status-mount"><StatusBanner client:load siteId="home" /></div>
-  )}
+  <article class="home spine">
+    {/* ── 1 · Hero ─────────────────────────────────────────────────── */}
+    <section class="hero" aria-label="Oriz family">
+      <h1 class="wm" aria-label="oriz">
+        <span class="wm-letter" data-i="0">o</span><span
+          class="wm-letter" data-i="1">r</span><span class="wm-letter" data-i="2">i</span><span
+          class="wm-letter wm-z" data-i="3">z</span>
+      </h1>
+      <p class="tagline">
+        A self-built family of <em>free tools, content, and books</em>.
+        <br />
+        <span class="tagline-mute">For developers, the curious, and everyone in between.</span>
+      </p>
+      <form class="search" role="search" onsubmit="event.preventDefault()">
+        <label class="visually-hidden" for="oriz-search">Search the Oriz family</label>
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          id="oriz-search"
+          type="search"
+          autocomplete="off"
+          placeholder="Search apps, books, packages…"
+        />
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
+      </form>
+    </section>
 
-  <article class="page">
-    {/* 1 — Wordmark. Plain text serif, no decoration. Title-Case lock. */}
-    <h1 class="brand">Oriz</h1>
-
-    {/* 2 — Hero paragraph. */}
-    <p class="lede">
-      Oriz — a 17-package, 26-app open family by{' '}
-      <a class="lede-link" href="https://me.oriz.in">Chirag Singhal</a>. Free-forever,
-      recruiter-grade web tools, reading sites, and developer libraries. Every site
-      shares one sign-in, one design system, and one knowledge base.
-    </p>
-
-    {/* 2a — 5-section family grid (2026-06-22). Five primary entry points. */}
-    <h2 class="section-h">Explore the family</h2>
-    <ul class="family-grid">
-      <li class="family-cell"><a href="/apps/"><strong>Apps</strong><span>26 web apps across tools, content, personal &amp; hub.</span></a></li>
-      <li class="family-cell"><a href="/tools/"><strong>Tools</strong><span>16 focused utilities — PDF, finance, dev, health.</span></a></li>
-      <li class="family-cell"><a href="/books/"><strong>Books</strong><span>5 books on Stack, Paisa, PDF, Janaushdhi, Me.</span></a></li>
-      <li class="family-cell"><a href="https://packages.oriz.in"><strong>Packages</strong><span>17 npm packages powering the family.</span></a></li>
-      <li class="family-cell"><a href="https://me.oriz.in"><strong>Me</strong><span>Chirag Singhal — lifestream &amp; resume.</span></a></li>
-    </ul>
-
-    {/* 2b — Section nav. Plain text links to /apps, /packages, /mobile,
-            /desktop, /extensions. The five new sections (2026-06-21). */}
-    <nav class="section-nav" aria-label="Catalog sections">
-      <a href="/apps/">Apps</a>
-      <span aria-hidden="true">·</span>
-      <a href="/packages/">Packages</a>
-      <span aria-hidden="true">·</span>
-      <a href="/mobile/">Mobile</a>
-      <span aria-hidden="true">·</span>
-      <a href="/desktop/">Desktop</a>
-      <span aria-hidden="true">·</span>
-      <a href="/extensions/">Extensions</a>
-    </nav>
-
-    {/* 3 — Sites list. Plain rows, no card chrome. */}
-    <h2 class="section-h">Sites</h2>
-    <ul class="sites">
-      {
-        SITES.map((s) => (
-          <li class="site-row">
-            <a class="site-link" href={s.url}>
-              <strong class="site-name">{s.name}</strong>
-              <span class="site-desc">{s.desc}</span>
-              <span class="site-domain">{s.domain}</span>
+    {/* ── 2 · Apps ─────────────────────────────────────────────────── */}
+    <section class="block" id="apps">
+      <header class="block-h">
+        <h2>Apps</h2>
+        <a class="block-more" href="/apps/">All apps →</a>
+      </header>
+      <ul class="apps-grid">
+        {APP_CARDS.map((a) => (
+          <li class="app-card">
+            <a href={a.url}>
+              <h3 class="app-name">{a.name}</h3>
+              <p class="app-desc">{a.desc}</p>
+              <span class="app-host">{a.host}</span>
+              <span class="app-open">Open ↗</span>
             </a>
           </li>
-        ))
-      }
-    </ul>
+        ))}
+      </ul>
+    </section>
 
-    {/* 4 — Browser extensions. Auto-filled from GH API; placeholder line until shipped. */}
-    <h2 class="section-h">Browser extensions</h2>
-    {
-      extensions.length > 0 ? (
-        <ul class="sites">
-          {extensions.map((x) => (
-            <li class="site-row">
-              <a class="site-link" href={x.url}>
-                <strong class="site-name">{x.name}</strong>
-                <span class="site-desc">{x.desc}</span>
-                <span class="site-domain">github</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="post-fallback">
-          Browser extensions in development — see{' '}
-          <a href="https://github.com/chirag127?tab=repositories&q=oriz+ext">github.com/chirag127</a>.
-          {extsFromApi ? '' : ' (List auto-fills at next build.)'}
-        </p>
-      )
-    }
-
-    {/* 5 — Open-source packages. Empty by default; will refill as packages publish. */}
-    <h2 class="section-h">Open-source packages</h2>
-    {
-      PKGS.length > 0 ? (
-        <ul class="sites">
-          {PKGS.map((p) => (
-            <li class="site-row">
-              <div class="pkg-link">
-                <strong class="site-name">{p.name}</strong>
-                <span class="site-desc">{p.desc}</span>
-                <span class="site-domain">
-                  <a href={p.npm}>npm</a> · <a href={p.github}>github</a>
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="post-fallback">
-          Packages in development — see{' '}
-          <a href="https://github.com/chirag127?tab=repositories">github.com/chirag127</a>.
-        </p>
-      )
-    }
-
-    {/* 6 — Tech stack. 3-column plain table. */}
-    <h2 class="section-h">Tech stack</h2>
-    <table class="stack">
-      <thead>
-        <tr>
-          <th scope="col">Layer</th>
-          <th scope="col">Pick</th>
-          <th scope="col">Why</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          STACK.map((row) => (
-            <tr>
-              <td class="stack-layer">{row.layer}</td>
-              <td class="stack-pick">{row.pick}</td>
-              <td class="stack-why">{row.why}</td>
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
-
-    {/* 7 — By the numbers. */}
-    <h2 class="section-h">By the numbers</h2>
-    <ul class="more">
-      {
-        NUMBERS.map((n) => (
-          <li>
-            <span class="more-name">{n.label}</span>
-            <span>{n.value}</span>
+    {/* ── 3 · Tools ────────────────────────────────────────────────── */}
+    <section class="block" id="tools">
+      <header class="block-h">
+        <h2>Tools</h2>
+        <a class="block-more" href="/tools/">All tools →</a>
+      </header>
+      <ul class="tools-grid">
+        {TOOL_LIST.map((t) => (
+          <li class="tool-cell">
+            <a href={`https://${t.host}`}>
+              <span class="tool-slug">{t.slug}</span>
+              <span class="tool-host">{t.host}</span>
+            </a>
           </li>
-        ))
-      }
-    </ul>
+        ))}
+      </ul>
+    </section>
 
-    {/* 8 — Latest from the blog. Build-time RSS, graceful fallback. */}
-    <h2 class="section-h">Latest from the blog</h2>
-    {
-      blogFetchOk ? (
-        <ul class="posts">
-          {posts.map((p) => (
-            <li class="post-row">
-              <span class="post-date">{fmtDate(p.pubDate)}</span>
-              <span class="post-sep" aria-hidden="true">·</span>
-              <a class="post-link" href={p.link}>
-                {p.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="post-fallback">
-          Blog launching soon — see{' '}
-          <a href="https://github.com/chirag127/oriz-blog-site">github.com/chirag127/oriz-blog-site</a>.
-        </p>
-      )
-    }
+    {/* ── 4 · Books ───────────────────────────────────────────────── */}
+    <section class="block" id="books">
+      <header class="block-h">
+        <h2>Books</h2>
+        <a class="block-more" href="/books/">All books →</a>
+      </header>
+      <ul class="books-grid">
+        {BOOKS.map((b) => (
+          <li class="book-card">
+            <div class="book-cover" aria-hidden="true">
+              <span class="book-cover-title">{b.title}</span>
+            </div>
+            <h3 class="book-title">{b.title}</h3>
+            <p class="book-author">{b.author}</p>
+            <p class="book-status">Coming soon</p>
+          </li>
+        ))}
+      </ul>
+    </section>
 
-    {/* 9 — Recent commits. */}
-    <h2 class="section-h">Recent commits</h2>
-    {
-      commits.length > 0 ? (
-        <ul class="posts">
-          {commits.map((c) => (
-            <li class="post-row">
-              <span class="post-date">{c.ago}</span>
-              <span class="post-sep" aria-hidden="true">·</span>
-              <a class="post-link" href={c.url}>
-                <strong>{c.repo}</strong> — {c.message}
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="post-fallback">
-          Activity feed unavailable right now — see{' '}
-          <a href="https://github.com/chirag127">github.com/chirag127</a>.
-        </p>
-      )
-    }
+    {/* ── 5 · Packages ────────────────────────────────────────────── */}
+    <section class="block" id="packages">
+      <header class="block-h">
+        <h2>Packages</h2>
+        <a class="block-more" href="https://packages.oriz.in">All packages →</a>
+      </header>
+      <ul class="pkg-grid">
+        {PKG_SLUGS.map((s) => (
+          <li class="pkg-cell">
+            <a href={`https://npm.im/@chirag127/${s}`}>
+              <span class="pkg-slug">{s}</span>
+              <span class="pkg-scope">@chirag127</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
 
-    {/* 10 — More. Plain links, including the MultiSearch popover. */}
-    <h2 class="section-h">More</h2>
-    <ul class="more">
-      <li>
-        <span class="more-name">GitHub</span>
-        <a href="https://github.com/chirag127/oriz">github.com/chirag127/oriz</a>
-      </li>
-      <li>
-        <span class="more-name">Support</span>
-        <a href="/support/">/support</a>
-      </li>
-      <li>
-        <span class="more-name">Privacy</span>
-        <a href="/privacy/">/privacy</a>
-      </li>
-      <li>
-        <span class="more-name">Search the web</span>
-        <span class="search-mount">
-          <MultiSearch client:idle titleSuffix=" — Oriz" label="Search the web →" />
-        </span>
-      </li>
-    </ul>
-
-    {/* 12 — Tiny colophon. */}
-    <p class="colophon">
-      Built by Chirag Singhal · <a href="https://github.com/chirag127/oriz">Source on GitHub</a> ·
-      Last deployed {buildDate}
-    </p>
+    {/* ── 6 · Me ──────────────────────────────────────────────────── */}
+    <section class="block" id="me">
+      <header class="block-h">
+        <h2>Me</h2>
+      </header>
+      <div class="me-grid">
+        <a class="me-card" href="https://me.oriz.in">
+          <h3 class="me-name">Chirag Singhal</h3>
+          <p class="me-desc">
+            Lifestream, now-page, uses, CV, contact. The person behind every Oriz site.
+          </p>
+          <span class="me-host">me.oriz.in</span>
+          <span class="me-open">Open ↗</span>
+        </a>
+      </div>
+    </section>
   </article>
 </BaseLayout>
 
+<script>
+  /*
+   * Wordmark wave — Motion One. weight 300 → 900 across the 4 letters,
+   * staggered 120ms, ~600ms each. Respects prefers-reduced-motion.
+   * Falls back gracefully if motion fails to load (letters render static at weight 700).
+   */
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const letters = document.querySelectorAll<HTMLElement>('.wm-letter')
+
+  if (!reduce && letters.length > 0) {
+    import('motion')
+      .then(({ animate, stagger }) => {
+        animate(
+          letters,
+          {
+            fontWeight: [300, 900, 700],
+            opacity: [0, 1, 1],
+            y: [12, 0, 0],
+          },
+          {
+            duration: 0.9,
+            delay: stagger(0.12),
+            ease: [0.2, 0.7, 0.2, 1],
+          },
+        )
+      })
+      .catch(() => {
+        for (const el of letters) (el as HTMLElement).style.opacity = '1'
+      })
+  } else {
+    for (const el of letters) (el as HTMLElement).style.opacity = '1'
+  }
+
+  /* Slash-key focuses the search bar (Algolia / GitHub convention). */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/') return
+    const target = e.target as HTMLElement | null
+    if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return
+    const input = document.getElementById('oriz-search') as HTMLInputElement | null
+    if (input) {
+      e.preventDefault()
+      input.focus()
+    }
+  })
+</script>
+
 <style>
-  /* ── Page scaffold ──────────────────────────────────────────────────── */
-
-  .status-mount {
-    /* Status banner is dismissible / hidden by default — keep it pinned to
-       the top so it doesn't displace the page above the fold normally. */
-    width: 100%;
-  }
-
-  .page {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2rem)
-      clamp(3rem, 8vw, 5rem);
-  }
-
-  /* ── 1 · Wordmark ──────────────────────────────────────────────────── */
-
-  .brand {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: clamp(2.5rem, 6vw, 3.25rem);
-    letter-spacing: -0.01em;
-    line-height: 1;
-    margin: 0 0 clamp(1.5rem, 4vw, 2.25rem);
-    color: var(--ink);
-  }
-
-  /* ── 2 · Hero paragraph ────────────────────────────────────────────── */
-
-  .lede {
-    font-family: var(--font-display);
-    font-size: 1.0625rem;
-    line-height: 1.65;
-    margin: 0 0 clamp(2.25rem, 6vw, 3.25rem);
-    color: var(--ink);
-    max-width: 60ch;
-  }
-  .lede-link {
-    color: var(--accent);
-  }
-
-  /* ── 2b · Section nav row ─────────────────────────────────────────── */
-
-  .section-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: baseline;
-    margin: 0 0 clamp(2.25rem, 6vw, 3.25rem);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--ink-mute);
-  }
-  .section-nav a {
-    color: var(--accent);
-  }
-  .section-nav a:hover,
-  .section-nav a:focus-visible {
-    text-decoration: underline;
-  }
-
-  /* ── Section headings — small caps, regular weight ─────────────────── */
-
-  .section-h {
-    font-family: var(--font-display);
-    font-variant-caps: all-small-caps;
-    font-feature-settings: 'smcp' 1, 'c2sc' 1;
-    font-weight: 500;
-    font-size: 0.9375rem;
-    letter-spacing: 0.08em;
-    color: var(--ink-mute);
-    margin: clamp(2rem, 5vw, 2.75rem) 0 clamp(0.75rem, 2vw, 1rem);
-  }
-
-  /* ── 3-5 · Plain row lists (sites / extensions / packages) ─────────── */
-
-  .sites,
-  .posts,
-  .more {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .site-row {
-    border-top: 1px solid var(--rule);
-  }
-  .site-row:last-child {
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .site-link,
-  .pkg-link {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr auto;
-    gap: 1rem;
-    align-items: baseline;
-    padding-block: 0.625rem;
-    color: inherit;
-    text-decoration: none;
-  }
-  .site-link:hover {
-    text-decoration: none;
-  }
-  .site-link:hover .site-name,
-  .site-link:hover .site-domain {
-    color: var(--accent);
-  }
-  .site-link:hover .site-domain {
-    text-decoration: underline;
-  }
-
-  .site-name {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--ink);
-  }
-  .site-desc {
-    font-family: var(--font-display);
-    font-weight: 400;
-    color: var(--ink);
-  }
-  .site-domain {
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    color: var(--ink-mute);
-    text-align: right;
-    white-space: nowrap;
-  }
-  .pkg-link .site-domain a {
-    color: var(--accent);
-  }
-
-  /* ── 6 · Tech-stack table ─────────────────────────────────────────── */
-
-  .stack {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-  }
-  .stack thead th {
-    font-weight: 500;
-    text-align: left;
-    color: var(--ink-mute);
-    font-variant-caps: all-small-caps;
-    font-feature-settings: 'smcp' 1, 'c2sc' 1;
-    letter-spacing: 0.06em;
-    padding: 0.5rem 0.75rem 0.5rem 0;
-    border-bottom: 1px solid var(--rule);
-  }
-  .stack tbody td {
-    padding: 0.5rem 0.75rem 0.5rem 0;
-    border-top: 1px solid var(--rule);
-    color: var(--ink);
-    vertical-align: top;
-  }
-  .stack tbody tr:last-child td {
-    border-bottom: 1px solid var(--rule);
-  }
-  .stack-layer {
-    font-weight: 600;
-    width: 8rem;
-  }
-  .stack-pick {
-    /* allow long pick descriptions to wrap */
-    word-break: break-word;
-  }
-  .stack-why {
-    color: var(--ink-mute);
-    width: 12rem;
-  }
-
-  /* ── 8 · Latest blog posts ─────────────────────────────────────────── */
-
-  .post-row {
-    padding-block: 0.375rem;
-    color: var(--ink);
-  }
-  .post-date {
-    font-family: var(--font-display);
-    color: var(--ink-mute);
-    font-size: 0.9375rem;
-    display: inline-block;
-    min-width: 6.5rem;
-  }
-  .post-sep {
-    color: var(--ink-mute);
-    margin-inline: 0.5rem;
-  }
-  .post-link {
-    color: var(--accent);
-  }
-  .post-fallback {
-    margin: 0;
-    color: var(--ink-mute);
-  }
-
-  /* ── 7 · By-the-numbers + 10 · More section ─────────────────────────── */
-
-  .more li {
-    display: grid;
-    grid-template-columns: 11rem 1fr;
-    gap: 1rem;
-    padding-block: 0.375rem;
-    align-items: baseline;
-  }
-  .more-name {
-    color: var(--ink);
-  }
-  .search-mount {
-    display: inline-block;
-  }
-
-  /* MultiSearch trigger — render as a plain inline link, not a button. */
-  .search-mount :global([data-oriz-multisearch='trigger']) {
-    background: transparent;
-    border: 0;
-    padding: 0;
-    color: var(--accent);
-    font: inherit;
-    font-family: var(--font-display);
-    font-size: 1rem;
-    cursor: pointer;
-  }
-  .search-mount :global([data-oriz-multisearch='trigger']:hover) {
-    text-decoration: underline;
-  }
-  .search-mount :global([data-oriz-multisearch='trigger']:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  .search-mount :global([data-oriz-multisearch='popover']) {
+  /* ── Visually hidden helper ───────────────────────────────────────── */
+  .visually-hidden {
     position: absolute;
-    margin-top: 0.25rem;
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    padding: 0.75rem;
-    z-index: 50;
-    min-width: 240px;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-  .search-mount :global([data-oriz-multisearch='query']) {
-    font-family: var(--font-display);
-    font-size: 0.8125rem;
-    color: var(--ink-mute);
-    margin: 0 0 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--rule);
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    max-width: 220px;
-  }
-  .search-mount :global([data-oriz-multisearch='list']) {
-    list-style: none;
-    margin: 0;
+    width: 1px;
+    height: 1px;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-  .search-mount :global([data-oriz-multisearch='engine']) {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.375rem 0.5rem;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .search-mount :global([data-oriz-multisearch='engine']:hover) {
-    background: color-mix(in oklab, var(--accent) 8%, transparent);
-    color: var(--accent);
-    text-decoration: none;
-  }
-  .search-mount :global([data-oriz-multisearch='glyph']) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    font-size: 0.6875rem;
-    color: var(--ink-mute);
-    border: 1px solid var(--rule);
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
-  /* ── 11 · Status banner styling on white paper ──────────────────────── */
+  .home {
+    padding-block: clamp(1.5rem, 5vw, 3rem) clamp(3rem, 8vw, 5rem);
+  }
 
-  .status-mount :global([data-oriz-status]) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    color: var(--ink);
-    background: #fff8db; /* mild yellow strap, not the dark broadsheet mustard */
-    border-bottom: 1px solid var(--rule);
+  /* ── 1 · Hero ─────────────────────────────────────────────────────── */
+
+  .hero {
+    padding-block: clamp(2rem, 8vw, 5rem) clamp(2rem, 6vw, 4rem);
     text-align: center;
   }
-  .status-mount :global([data-oriz-status='partial_outage']) {
-    background: #fdecd5;
+  .wm {
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 22vw, 12rem);
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    margin: 0;
+    color: var(--color-fg);
+    font-feature-settings: 'ss01' 1, 'ss02' 1;
+    display: inline-flex;
+    align-items: baseline;
   }
-  .status-mount :global([data-oriz-status='major_outage']) {
-    background: #fde2dc;
+  .wm-letter {
+    display: inline-block;
+    font-weight: 700;
+    opacity: 0;
+    will-change: font-weight, opacity, transform;
   }
-  .status-mount :global([data-oriz-status='maintenance']) {
-    background: #e6f3ec;
+  .wm-z {
+    position: relative;
+    color: var(--color-accent);
   }
-  .status-mount :global([data-oriz-status-link]) {
-    color: var(--accent);
-    text-decoration: underline;
+  @media (prefers-reduced-motion: reduce) {
+    .wm-letter {
+      opacity: 1 !important;
+    }
   }
-  .status-mount :global([data-oriz-status-dismiss]) {
-    margin-left: auto;
+
+  .tagline {
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2.2vw, 1.5rem);
+    line-height: 1.5;
+    margin: clamp(1.5rem, 4vw, 2.25rem) auto 0;
+    max-width: 38rem;
+    color: var(--color-fg);
+  }
+  .tagline em {
+    font-style: italic;
+    color: var(--color-accent);
+  }
+  .tagline-mute {
+    color: var(--color-muted);
+    font-size: 0.95em;
+  }
+
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 32rem;
+    margin: clamp(2rem, 5vw, 3rem) auto 0;
+    padding: 0.625rem 0.875rem;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .search:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent) 14%, transparent);
+  }
+  .search-icon {
+    color: var(--color-muted);
+    font-size: 1.1rem;
+  }
+  .search input {
+    flex: 1;
     background: transparent;
     border: 0;
-    color: inherit;
-    cursor: pointer;
+    outline: 0;
+    font-family: var(--font-body);
     font-size: 1rem;
-    line-height: 1;
-    padding: 0 0.25rem;
+    color: var(--color-fg);
+    min-width: 0;
+  }
+  .search input::placeholder {
+    color: var(--color-muted);
+  }
+  .search-kbd {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-muted);
+    background: var(--color-bg);
   }
 
-  /* ── 12 · Colophon ──────────────────────────────────────────────────── */
-
-  .colophon {
-    margin-top: clamp(2.5rem, 6vw, 4rem);
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-mute);
-    font-size: 0.875rem;
+  /* ── Block scaffold ───────────────────────────────────────────────── */
+  .block {
+    margin-block: clamp(3rem, 7vw, 4.5rem);
   }
-  .colophon a {
-    color: var(--accent);
+  .block-h {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 clamp(1rem, 2.5vw, 1.5rem);
+    padding-bottom: 0.625rem;
+    border-bottom: 2px solid var(--color-fg);
+  }
+  .block-h h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 3.5vw, 2.25rem);
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-fg);
+    letter-spacing: -0.02em;
+  }
+  .block-more {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .block-more:hover {
+    text-decoration: underline;
   }
 
-  /* ── 2a · Family grid (5-cell entry-point row) ─────────────────────── */
-  .family-grid {
+  /* ── 2 · Apps grid ───────────────────────────────────────────────── */
+  .apps-grid {
     list-style: none;
     padding: 0;
-    margin: 0 0 clamp(2rem, 5vw, 2.75rem);
+    margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.875rem;
   }
-  .family-cell a {
+  .app-card a {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0.5rem;
+    height: 100%;
+    padding: 1.125rem 1.125rem 1rem;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .app-card a:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+  .app-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.375rem;
+    margin: 0;
+    color: var(--color-fg);
+  }
+  .app-desc {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    color: var(--color-muted);
+  }
+  .app-host {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+  .app-open {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── 3 · Tools grid (4-col compact) ───────────────────────────────── */
+  .tools-grid,
+  .pkg-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+  }
+  .tool-cell,
+  .pkg-cell {
+    background: var(--color-bg);
+  }
+  .tool-cell a,
+  .pkg-cell a {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    padding: 0.75rem 0.875rem;
-    border: 1px solid var(--rule);
+    padding: 0.875rem 1rem;
+    background: var(--color-bg);
     color: inherit;
     text-decoration: none;
+    transition: background 0.15s;
+  }
+  .tool-cell a:hover,
+  .pkg-cell a:hover {
+    background: #fff;
+  }
+  .tool-cell a:hover .tool-slug,
+  .pkg-cell a:hover .pkg-slug {
+    color: var(--color-accent);
+  }
+  .tool-slug,
+  .pkg-slug {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--color-fg);
+  }
+  .tool-host,
+  .pkg-scope {
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── 4 · Books grid ──────────────────────────────────────────────── */
+  .books-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+  .book-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .book-cover {
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    background:
+      radial-gradient(120% 80% at 30% 20%, color-mix(in oklab, var(--color-ochre) 50%, var(--color-accent)) 0%, var(--color-accent) 70%);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 0.875rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .book-cover-title {
     font-family: var(--font-display);
-    height: 100%;
-  }
-  .family-cell a:hover,
-  .family-cell a:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .family-cell strong {
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 1.125rem;
+    line-height: 1.15;
   }
-  .family-cell span {
+  .book-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.0625rem;
+    margin: 0;
+    color: var(--color-fg);
+  }
+  .book-author {
+    font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--ink-mute);
-    line-height: 1.4;
+    color: var(--color-muted);
+    margin: 0;
+  }
+  .book-status {
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin: 0;
   }
 
-  /* ── Mobile — collapse rows to two-line stacks. ────────────────────── */
-  @media (max-width: 560px) {
-    .site-link,
-    .pkg-link {
-      grid-template-columns: 1fr;
-      grid-template-areas:
-        'name'
-        'desc'
-        'domain';
-      gap: 0.125rem;
-    }
-    .site-name { grid-area: name; }
-    .site-desc { grid-area: desc; color: var(--ink-mute); font-size: 0.9375rem; }
-    .site-domain { grid-area: domain; text-align: left; }
+  /* ── 6 · Me grid ─────────────────────────────────────────────────── */
+  .me-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 28rem);
+    gap: 1rem;
+  }
+  .me-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: var(--color-fg);
+    color: var(--color-bg);
+    text-decoration: none;
+    transition: transform 0.18s;
+  }
+  .me-card:hover {
+    transform: translateY(-2px);
+  }
+  .me-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--color-bg);
+  }
+  .me-desc {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    color: color-mix(in oklab, var(--color-bg) 80%, var(--color-fg));
+  }
+  .me-host {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    color: color-mix(in oklab, var(--color-bg) 70%, var(--color-fg));
+  }
+  .me-open {
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+  }
 
-    .more li {
-      grid-template-columns: 1fr;
-      gap: 0.125rem;
+  /* ── Responsive ──────────────────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    .tools-grid,
+    .pkg-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
-    .post-date {
-      min-width: 0;
-      display: block;
+  }
+  @media (max-width: 768px) {
+    .tools-grid,
+    .pkg-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
-    .post-sep {
-      display: none;
+    .block-h {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.375rem;
     }
-    .post-link {
-      display: block;
+  }
+  @media (max-width: 480px) {
+    .books-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
     }
-
-    .stack {
-      font-size: 0.875rem;
-    }
-    .stack-layer { width: auto; }
-    .stack-why   { width: auto; }
   }
 </style>

@@ -1,10 +1,17 @@
 ---
 /*
- * /disclaimer — thin wrapper around <Disclaimer /> from @chirag127/astro-chrome.
+ * /disclaimer — stub pointer to canonical legal/disclaimer.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import Disclaimer from '@chirag127/astro-chrome/legal/Disclaimer.astro'
 ---
-<BaseLayout title="Disclaimer — oriz" description="Financial / health / educational disclaimers." canonical="https://oriz.in/disclaimer/" wordmarkSubtitle="disclaimer">
-  <Disclaimer appName="Oriz" appDomain="oriz.in" contactEmail="hello@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+<BaseLayout title="Disclaimer — oriz" description="General disclaimer for Oriz apps and tools." canonical="https://oriz.in/disclaimer/">
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / disclaimer</p>
+    <h1>Disclaimer</h1>
+    <p class="lede">What Oriz is — and what it isn't.</p>
+  </header>
+  <section class="spine prose">
+    <p>Oriz apps and tools are provided as-is, without warranty of any kind. Finance, health, and legal-adjacent tools are informational only — consult a qualified professional for decisions that matter.</p>
+    <p>The canonical disclaimer lives at <a href="/legal/disclaimer/">/legal/disclaimer</a>.</p>
+  </section>
 </BaseLayout>

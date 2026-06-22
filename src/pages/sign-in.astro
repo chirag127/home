@@ -1,0 +1,31 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Sign in — oriz"
+  description="Sign in to Oriz. One account works across every Oriz site."
+  noindex={true}
+>
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / sign in</p>
+    <h1>Sign in</h1>
+    <p class="lede">One sign-in works across every Oriz app.</p>
+  </header>
+
+  <section class="spine prose">
+    <p>
+      Use the unified <a href="/account/">/account</a> panel — it handles
+      sign-in, sign-out, and account management in one place. Sign-in via
+      passwordless email link or one-tap Google.
+    </p>
+    <p style="margin-top: 1.5rem">
+      <a
+        href="/account/"
+        style="display: inline-block; padding: 0.625rem 1.125rem; background: var(--color-fg); color: var(--color-bg); border-radius: 999px; text-decoration: none; font-weight: 500;"
+      >
+        Continue to account →
+      </a>
+    </p>
+  </section>
+</BaseLayout>

@@ -1,10 +1,17 @@
 ---
 /*
- * /terms — thin wrapper around <Terms /> from @chirag127/astro-chrome.
+ * /terms — stub pointer to canonical legal/terms.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import Terms from '@chirag127/astro-chrome/legal/Terms.astro'
 ---
-<BaseLayout title="Terms — oriz" description="Terms of service for oriz.in." canonical="https://oriz.in/terms/" wordmarkSubtitle="terms">
-  <Terms appName="Oriz" appDomain="oriz.in" contactEmail="privacy@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+<BaseLayout title="Terms — oriz" description="Terms of service for oriz.in." canonical="https://oriz.in/terms/">
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / terms</p>
+    <h1>Terms of Service</h1>
+    <p class="lede">The rules of the road for using Oriz apps, tools, and packages.</p>
+  </header>
+  <section class="spine prose">
+    <p>The canonical Terms of Service for the Oriz family lives at <a href="/legal/terms/">/legal/terms</a>.</p>
+    <p>Short version: use Oriz tools at your own risk, don't abuse the free tier, source code is MIT-licensed and content is CC-BY-4.0.</p>
+  </section>
 </BaseLayout>

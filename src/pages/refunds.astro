@@ -1,10 +1,17 @@
 ---
 /*
- * /refunds — thin wrapper around <Refunds /> from @chirag127/astro-chrome.
+ * /refunds — stub. Canonical refund policy.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
-import Refunds from '@chirag127/astro-chrome/legal/Refunds.astro'
 ---
-<BaseLayout title="Refunds — oriz" description="7-day money-back refund policy." canonical="https://oriz.in/refunds/" wordmarkSubtitle="refunds">
-  <Refunds appName="Oriz" appDomain="oriz.in" contactEmail="hello@oriz.in" jurisdiction="India" lastUpdated="2026-06-22" />
+<BaseLayout title="Refunds — oriz" description="14-day no-questions refund policy for paid Oriz tiers." canonical="https://oriz.in/refunds/">
+  <header class="spine page-head">
+    <p class="eyebrow"><a href="/">oriz</a> / refunds</p>
+    <h1>Refunds</h1>
+    <p class="lede">14-day, no-questions refunds on every paid tier.</p>
+  </header>
+  <section class="spine prose">
+    <p>Every Oriz tool is free to use. Paid tiers (Pro $5/mo, Max $15/mo) unlock higher quotas. If a paid tier doesn't fit, email <a href="mailto:hello@oriz.in">hello@oriz.in</a> within 14 days — we refund in full.</p>
+    <p>Refunds are processed on the original payment rail (Razorpay for India, Lemon Squeezy for international). Typical landing time 3–7 business days.</p>
+  </section>
 </BaseLayout>
