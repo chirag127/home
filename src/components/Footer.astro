@@ -9,8 +9,16 @@
  * Palette: paper #f8f4ed + vermilion #e0492f accent (locked tokens).
  * Type: Fraunces display, Inter body, JetBrains Mono utility.
  */
-import LegalFooter from '@chirag127/astro-chrome/legal/LegalFooter.astro'
 import { FAMILY_SITES } from '~/lib/family'
+
+const legalLinks = [
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/refunds', label: 'Refunds' },
+  { href: '/disclaimer', label: 'Disclaimer' },
+]
 
 const apps = FAMILY_SITES.filter((s) => s.category !== 'personal' || s.slug === 'home' || s.slug === 'me')
 const tools = FAMILY_SITES.filter((s) => s.category === 'tools')
@@ -51,10 +59,15 @@ const finance = FAMILY_SITES.filter((s) => s.category === 'finance')
       </ul>
     </div>
   </div>
-  <LegalFooter
-    appName="Oriz"
-    bio="A free family of static sites and tools by Chirag Singhal — no ads, no tracking, MIT-licensed."
-  />
+  <div class="hf-legal">
+    <div class="hf-legal-inner">
+      <p class="hf-bio">A free family of static sites and tools by Chirag Singhal — no ads, no tracking, MIT-licensed.</p>
+      <nav class="hf-legal-nav" aria-label="Legal">
+        {legalLinks.map((l) => <a href={l.href}>{l.label}</a>)}
+      </nav>
+      <p class="hf-copy">© {new Date().getFullYear()} Oriz · <a href="https://github.com/chirag127">github.com/chirag127</a></p>
+    </div>
+  </div>
 </footer>
 <style>
   .home-footer {
@@ -103,4 +116,24 @@ const finance = FAMILY_SITES.filter((s) => s.category === 'finance')
   .hf-col a:hover { border-bottom-color: var(--color-accent, var(--vermilion)); }
   @media (min-width: 768px) { .hf-sitemap { grid-template-columns: 1fr 1fr; gap: 32px; padding: 40px 24px 16px; } }
   @media (min-width: 1024px) { .hf-sitemap { grid-template-columns: repeat(4, 1fr); padding: 48px 24px 20px; } }
+  .hf-legal {
+    border-top: 1px solid var(--color-border, var(--rule));
+    margin-top: 24px; padding: 24px 16px 32px;
+    background: var(--color-bg, var(--paper));
+  }
+  .hf-legal-inner { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .hf-bio { margin: 0; font-size: 13px; color: var(--color-muted, var(--ink-mute)); max-width: 60ch; }
+  .hf-legal-nav { display: flex; flex-wrap: wrap; gap: 18px; }
+  .hf-legal-nav a {
+    color: var(--color-fg, var(--ink));
+    font-size: 13px; text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  .hf-legal-nav a:hover { border-bottom-color: var(--color-accent, var(--vermilion)); }
+  .hf-copy {
+    margin: 0; font-size: 12px; color: var(--color-muted, var(--ink-mute));
+    font-family: var(--font-utility, var(--font-mono));
+  }
+  .hf-copy a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 </style>
