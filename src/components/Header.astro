@@ -35,8 +35,9 @@ const month = new Date().toLocaleString('en-US', { month: 'short', year: 'numeri
 ---
 
 <header class="header">
-  {/* Status banner — renders nothing when no incident is live. */}
-  <StatusBanner client:load siteId="home" />
+  {/* Status banner — renders nothing when no incident is live.
+      Gated behind PROD so dev doesn't hit DNS for unprovisioned subdomains. */}
+  {import.meta.env.PROD && <StatusBanner client:load siteId="home" />}
 
   <hr class="hairline" />
   <div class="spine header-row header-meta">

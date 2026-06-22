@@ -266,13 +266,15 @@ const buildDate = new Date().toLocaleDateString('en-US', { year: 'numeric', mont
 ---
 
 <BaseLayout
-  chrome="bare"
   bodyClass="home-bare"
   title="Oriz — a family of free-forever, recruiter-grade web tools"
   description="Oriz is a family of free-forever, recruiter-grade web tools, reading sites, and developer libraries built and maintained by Chirag Singhal. Every site shares one sign-in, one design system, and one knowledge base."
 >
-  {/* Status banner — renders nothing unless an active incident is live. */}
-  <div class="status-mount"><StatusBanner client:load siteId="home" /></div>
+  {/* Status banner — renders nothing unless an active incident is live.
+      Gated behind PROD so dev doesn't hit DNS for unprovisioned subdomains. */}
+  {import.meta.env.PROD && (
+    <div class="status-mount"><StatusBanner client:load siteId="home" /></div>
+  )}
 
   <article class="page">
     {/* 1 — Wordmark. Plain text serif, no decoration. Title-Case lock. */}
