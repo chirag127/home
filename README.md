@@ -1,5 +1,7 @@
 # Oriz Home — Hub
 
+[![GitHub stars](https://img.shields.io/github/stars/chirag127/home?style=social)](https://github.com/chirag127/home/stargazers)
+
 > Landing site for the oriz family — the apex hub that links every `*.oriz.in` site together.
 
 **Live at**: https://oriz.in · **Status**: production
