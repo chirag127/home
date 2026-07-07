@@ -1,0 +1,43 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getCombinedActivity } from '~/lib/media-api'
+
+const activity = await getCombinedActivity(30)
+---
+
+<MediaLayout title="Activity" description="Combined media activity feed." activeRoute="/me/activity/">
+
+  <h1 class="media-page-title">Activity</h1>
+  <p class="media-page-subtitle">Combined feed — music · movies · TV · auto-updated on deploy</p>
+
+  {activity.length === 0
+    ? (
+      <div class="media-empty">
+        No activity yet. Set up API credentials in CF Pages env vars:<br />
+        <code style="color:var(--vermilion)">LASTFM_API_KEY</code> · <code style="color:var(--vermilion)">TRAKT_CLIENT_ID</code>
+      </div>
+    )
+    : (
+      <div style="display:flex;flex-direction:column;gap:4px">
+        {activity.map((item) => {
+          const icon = item.type === 'listen' ? '♪' : item.type === 'watch' ? '▶' : item.type === 'anime' ? '⊛' : '⊞'
+          const color = item.type === 'listen' ? '#1db954' : item.type === 'watch' ? '#e50914' : item.type === 'anime' ? '#2e51a2' : '#382110'
+          return (
+            <div style={`background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.875rem;display:flex;align-items:center;gap:0.75rem`}>
+              <span style={`font-size:0.85rem;color:${color};width:1.2rem;text-align:center`}>{icon}</span>
+              {item.image && <img src={item.image} alt="" width="32" height="32" style="border-radius:4px;flex-shrink:0" />}
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.85rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{item.title}</div>
+                <div style="font-size:0.75rem;color:var(--ink-dim)">{item.subtitle}</div>
+              </div>
+              <div style="font-size:0.7rem;color:var(--ink-faint);white-space:nowrap;flex-shrink:0">
+                {new Date(item.timestamp).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+</MediaLayout>

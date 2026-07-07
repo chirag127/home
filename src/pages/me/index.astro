@@ -1,0 +1,116 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import {
+  getLastfmRecentTracks,
+  getLastfmUserInfo,
+  getTraktStats,
+  getMALAnimeList,
+} from '~/lib/media-api'
+
+const [recentTracks, lfUser, traktStats, watching] = await Promise.all([
+  getLastfmRecentTracks(3),
+  getLastfmUserInfo(),
+  getTraktStats(),
+  getMALAnimeList('watching', 3),
+])
+
+const nowPlaying = recentTracks[0]?.['@attr']?.nowplaying ? recentTracks[0] : null
+const recentListen = nowPlaying ? recentTracks[1] : recentTracks[0]
+const totalScrobbles = (lfUser as any)?.playcount ?? '—'
+const moviesWatched = (traktStats as any)?.movies?.watched ?? '—'
+const showsWatched = (traktStats as any)?.shows?.watched ?? '—'
+---
+
+<MediaLayout title="Chirag Singhal" description="What I watch, listen to, and read." activeRoute="/me/">
+
+  <header style="margin-bottom:2.5rem">
+    <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1rem">
+      <img
+        src="https://github.com/chirag127.png?size=80"
+        alt="Chirag Singhal"
+        width="64" height="64"
+        style="border-radius:50%;border:2px solid var(--vermilion);"
+      />
+      <div>
+        <h1 class="media-page-title" style="margin-bottom:0">Chirag Singhal</h1>
+        <p style="color:var(--ink-dim);font-size:0.875rem">chirag127 · software engineer · Bhubaneswar</p>
+      </div>
+    </div>
+    <p style="color:var(--ink-dim);max-width:55ch;line-height:1.6;font-size:0.9rem">
+      This is what I'm watching, listening to, and reading — tracked automatically from Trakt, MyAnimeList, and Last.fm.
+    </p>
+  </header>
+
+  <!-- Live now-playing strip -->
+  {nowPlaying && (
+    <div style="background:var(--bg2);border:1px solid var(--vermilion);border-radius:var(--radius);padding:0.75rem 1rem;margin-bottom:2rem;display:flex;align-items:center;gap:0.75rem">
+      <span style="color:var(--vermilion);font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;white-space:nowrap">▶ Now</span>
+      {nowPlaying.image?.[2]?.['#text'] && (
+        <img src={nowPlaying.image[2]['#text']} alt="" width="36" height="36" style="border-radius:4px;flex-shrink:0" />
+      )}
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:0.875rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{nowPlaying.name}</div>
+        <div style="font-size:0.75rem;color:var(--ink-dim)">{nowPlaying.artist['#text']}</div>
+      </div>
+      <a href="/me/music/" style="margin-left:auto;color:var(--vermilion);font-size:0.75rem;text-decoration:none;white-space:nowrap">see all →</a>
+    </div>
+  )}
+
+  <!-- Stats row -->
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{totalScrobbles.toLocaleString()}</span>
+      <span class="media-stat-label">scrobbles</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{moviesWatched}</span>
+      <span class="media-stat-label">movies watched</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{showsWatched}</span>
+      <span class="media-stat-label">shows watched</span>
+    </div>
+  </div>
+
+  <!-- Quick links grid -->
+  <p class="media-section-label">Browse by category</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.75rem;margin-bottom:2rem">
+    {[
+      { href: '/me/music/',  icon: '♪', label: 'Music',    sub: 'Last.fm scrobbles' },
+      { href: '/me/movies/', icon: '▶', label: 'Movies',   sub: 'via Trakt' },
+      { href: '/me/tv/',     icon: '⊡', label: 'TV',       sub: 'via Trakt' },
+      { href: '/me/anime/',  icon: '⊛', label: 'Anime',    sub: 'via MAL' },
+      { href: '/me/manga/',  icon: '⊕', label: 'Manga',    sub: 'via MAL' },
+      { href: '/me/books/',  icon: '⊞', label: 'Books',    sub: 'via Goodreads' },
+      { href: '/me/activity/', icon: '⊘', label: 'Activity', sub: 'combined feed' },
+    ].map((item) => (
+      <a href={item.href} style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-decoration:none;color:inherit;transition:border-color 150ms" onmouseenter="this.style.borderColor='var(--vermilion)'" onmouseleave="this.style.borderColor='var(--border)'">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem">{item.icon}</div>
+        <div style="font-weight:600;font-size:0.875rem;color:var(--ink)">{item.label}</div>
+        <div style="font-size:0.7rem;color:var(--ink-faint)">{item.sub}</div>
+      </a>
+    ))}
+  </div>
+
+  <!-- Currently watching anime -->
+  {watching.length > 0 && (
+    <>
+      <p class="media-section-label">Currently watching anime</p>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:2rem">
+        {watching.map((a) => (
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:0.6rem 0.9rem;display:flex;align-items:center;gap:0.6rem">
+            {a.node.main_picture?.medium && (
+              <img src={a.node.main_picture.medium} alt="" width="32" height="32" style="border-radius:4px;object-fit:cover" />
+            )}
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--ink)">{a.node.title}</div>
+              <div style="font-size:0.7rem;color:var(--ink-dim)">Ep {a.list_status.num_episodes_watched}/{a.node.num_episodes ?? '?'}</div>
+            </div>
+          </div>
+        ))}
+        <a href="/me/anime/" style="display:flex;align-items:center;padding:0.6rem 0.9rem;color:var(--vermilion);font-size:0.8rem;text-decoration:none">see all →</a>
+      </div>
+    </>
+  )}
+
+</MediaLayout>

@@ -1,0 +1,62 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getTraktShows, getTraktStats } from '~/lib/media-api'
+
+const [shows, stats] = await Promise.all([
+  getTraktShows(40),
+  getTraktStats(),
+])
+
+const showsWatched = (stats as any)?.shows?.watched ?? 0
+const episodesWatched = (stats as any)?.episodes?.watched ?? 0
+const minutesWatched = (stats as any)?.episodes?.minutes ?? 0
+const hoursWatched = Math.round(minutesWatched / 60)
+
+// Deduplicate by show title for the grid
+const unique = new Map<string, typeof shows[0]>()
+for (const s of shows) {
+  if (s.show && !unique.has(s.show.title)) unique.set(s.show.title, s)
+}
+const uniqueShows = [...unique.values()]
+---
+
+<MediaLayout title="TV Shows" description="TV shows I've watched, tracked on Trakt." activeRoute="/me/tv/">
+
+  <h1 class="media-page-title">TV Shows</h1>
+  <p class="media-page-subtitle">Trakt.tv history · auto-updated on deploy</p>
+
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{showsWatched}</span>
+      <span class="media-stat-label">shows</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{episodesWatched.toLocaleString()}</span>
+      <span class="media-stat-label">episodes</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{hoursWatched.toLocaleString()}</span>
+      <span class="media-stat-label">hours</span>
+    </div>
+  </div>
+
+  <p class="media-section-label">Recently watched</p>
+  {uniqueShows.length === 0
+    ? <div class="media-empty">No shows yet — <a href="https://trakt.tv" rel="noopener">connect Trakt</a>.</div>
+    : (
+      <div class="media-grid">
+        {uniqueShows.slice(0, 40).map((s) => (
+          <div class="media-card">
+            <div class="media-card-poster-placeholder">⊡</div>
+            <div class="media-card-body">
+              <div class="media-card-title">{s.show!.title}</div>
+              <div class="media-card-sub">{s.show!.year}</div>
+              {s.episode && <div class="media-card-sub" style="margin-top:2px">S{s.episode.season}E{s.episode.number}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+</MediaLayout>

@@ -1,0 +1,75 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getTraktMovies, getTraktStats, getTraktWatchlist } from '~/lib/media-api'
+
+const [movies, stats, watchlist] = await Promise.all([
+  getTraktMovies(40),
+  getTraktStats(),
+  getTraktWatchlist(),
+])
+
+const moviesWatched = (stats as any)?.movies?.watched ?? movies.length
+const minutesWatched = (stats as any)?.movies?.minutes ?? 0
+const hoursWatched = Math.round(minutesWatched / 60)
+---
+
+<MediaLayout title="Movies" description="Movies I've watched, tracked on Trakt." activeRoute="/me/movies/">
+
+  <h1 class="media-page-title">Movies</h1>
+  <p class="media-page-subtitle">Trakt.tv history · auto-updated on deploy</p>
+
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{moviesWatched}</span>
+      <span class="media-stat-label">movies watched</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{hoursWatched.toLocaleString()}</span>
+      <span class="media-stat-label">hours watched</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{watchlist.length}</span>
+      <span class="media-stat-label">in watchlist</span>
+    </div>
+  </div>
+
+  <p class="media-section-label">Recently watched</p>
+  {movies.length === 0
+    ? <div class="media-empty">No movies yet — <a href="https://trakt.tv" rel="noopener">connect Trakt</a> and start tracking.</div>
+    : (
+      <div class="media-grid">
+        {movies.filter((m) => m.movie).map((m) => (
+          <a
+            href={`https://www.imdb.com/title/${m.movie!.ids.imdb}`}
+            rel="noopener" target="_blank"
+            class="media-card"
+          >
+            <div class="media-card-poster-placeholder">▶</div>
+            <div class="media-card-body">
+              <div class="media-card-title">{m.movie!.title}</div>
+              <div class="media-card-sub">{m.movie!.year}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  {watchlist.length > 0 && (
+    <>
+      <p class="media-section-label" style="margin-top:2.5rem">Watchlist</p>
+      <div class="media-grid">
+        {watchlist.slice(0, 12).map((w) => (
+          <div class="media-card">
+            <div class="media-card-poster-placeholder" style="opacity:0.5">◻</div>
+            <div class="media-card-body">
+              <div class="media-card-title">{w.movie.title}</div>
+              <div class="media-card-sub">{w.movie.year}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )}
+
+</MediaLayout>

@@ -1,0 +1,287 @@
+---
+/*
+ * MediaLayout — dark shell for all /me/* media tracking pages.
+ * Left sidebar (desktop) + bottom tab bar (mobile).
+ * Brand: Fraunces serif, vermilion #E0492F, dark charcoal background.
+ */
+interface Props {
+  title: string
+  description?: string
+  activeRoute?: string
+}
+
+const { title, description = 'Chirag Singhal — media tracking', activeRoute = '' } = Astro.props
+
+const NAV = [
+  { href: '/me/',        icon: '◉', label: 'Hub' },
+  { href: '/me/music/',  icon: '♪', label: 'Music' },
+  { href: '/me/movies/', icon: '▶', label: 'Movies' },
+  { href: '/me/tv/',     icon: '⊡', label: 'TV' },
+  { href: '/me/anime/',  icon: '⊛', label: 'Anime' },
+  { href: '/me/manga/',  icon: '⊕', label: 'Manga' },
+  { href: '/me/books/',  icon: '⊞', label: 'Books' },
+  { href: '/me/activity/', icon: '⊘', label: 'Activity' },
+  // Future slots — reserve room
+  { href: '/me/youtube/', icon: '▷', label: 'YouTube',  soon: true },
+  { href: '/me/travel/',  icon: '◎', label: 'Travel',   soon: true },
+]
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} · chirag127</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={`https://oriz.in${Astro.url.pathname}`} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet" />
+</head>
+<body class="media-body">
+
+  <!-- Left sidebar (desktop) -->
+  <nav class="media-sidebar" aria-label="Media sections">
+    <a href="/" class="media-logo" aria-label="oriz home">oriz</a>
+    <ul class="media-nav-list">
+      {NAV.map((n) => (
+        <li>
+          <a
+            href={n.href}
+            class:list={['media-nav-item', { active: activeRoute === n.href, soon: n.soon }]}
+            aria-label={n.label}
+            aria-current={activeRoute === n.href ? 'page' : undefined}
+          >
+            <span class="media-nav-icon" aria-hidden="true">{n.icon}</span>
+            <span class="media-nav-label">{n.label}</span>
+            {n.soon && <span class="media-nav-soon">soon</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+    <a href="/me/" class="media-back">← back to /me</a>
+  </nav>
+
+  <!-- Main content -->
+  <main class="media-main">
+    <slot />
+  </main>
+
+  <!-- Bottom tab bar (mobile) -->
+  <nav class="media-tabs" aria-label="Media sections mobile">
+    {NAV.filter((n) => !n.soon).slice(0, 7).map((n) => (
+      <a
+        href={n.href}
+        class:list={['media-tab', { active: activeRoute === n.href }]}
+        aria-label={n.label}
+      >
+        <span class="media-tab-icon">{n.icon}</span>
+        <span class="media-tab-label">{n.label}</span>
+      </a>
+    ))}
+  </nav>
+
+</body>
+</html>
+
+<style is:global>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --vermilion: #E0492F;
+    --vermilion-dim: rgba(224, 73, 47, 0.15);
+    --bg: #0e0e10;
+    --bg2: #17171a;
+    --bg3: #1e1e22;
+    --border: rgba(255,255,255,0.07);
+    --ink: #f0f0f0;
+    --ink-dim: #a0a0a8;
+    --ink-faint: #5a5a62;
+    --sidebar-w: 200px;
+    --tabs-h: 60px;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+    --radius: 10px;
+  }
+
+  html { background: var(--bg); color: var(--ink); }
+
+  .media-body {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: 1fr;
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+  }
+
+  /* ---- Sidebar ---- */
+  .media-sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100dvh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 0.75rem 1rem;
+    gap: 0.25rem;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .media-logo {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--vermilion);
+    text-decoration: none;
+    padding: 0 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .media-nav-list { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+  .media-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--ink-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 120ms, color 120ms;
+    position: relative;
+  }
+  .media-nav-item:hover { background: var(--bg3); color: var(--ink); }
+  .media-nav-item.active { background: var(--vermilion-dim); color: var(--vermilion); }
+  .media-nav-item.soon { opacity: 0.4; pointer-events: none; }
+
+  .media-nav-icon { font-size: 1rem; line-height: 1; width: 1.2rem; text-align: center; }
+  .media-nav-soon {
+    font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase;
+    background: var(--bg3); border-radius: 4px; padding: 1px 4px;
+    color: var(--ink-faint); margin-left: auto;
+  }
+
+  .media-back {
+    font-size: 0.75rem; color: var(--ink-faint); text-decoration: none;
+    padding: 0.5rem 0.6rem; border-top: 1px solid var(--border); margin-top: auto;
+  }
+  .media-back:hover { color: var(--ink-dim); }
+
+  /* ---- Main ---- */
+  .media-main {
+    grid-column: 2;
+    grid-row: 1;
+    margin-left: var(--sidebar-w);
+    min-height: 100dvh;
+    padding: 2rem 2rem 5rem;
+    max-width: 1100px;
+  }
+
+  /* ---- Bottom tabs (mobile) ---- */
+  .media-tabs {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--tabs-h);
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    overflow-x: auto;
+  }
+  .media-tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; min-width: 52px; gap: 2px;
+    text-decoration: none; color: var(--ink-faint); font-size: 0.6rem;
+    padding: 6px 2px;
+    transition: color 120ms;
+  }
+  .media-tab.active { color: var(--vermilion); }
+  .media-tab:hover { color: var(--ink-dim); }
+  .media-tab-icon { font-size: 1.1rem; line-height: 1; }
+  .media-tab-label { font-size: 0.55rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  @media (max-width: 768px) {
+    .media-sidebar { display: none; }
+    .media-tabs { display: flex; }
+    .media-body { grid-template-columns: 1fr; }
+    .media-main { margin-left: 0; padding: 1.25rem 1rem 5rem; }
+  }
+
+  /* ---- Shared media page styles ---- */
+  .media-page-title {
+    font-family: var(--font-serif);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+  .media-page-subtitle {
+    font-size: 0.875rem;
+    color: var(--ink-dim);
+    margin-bottom: 2rem;
+  }
+  .media-stat-row {
+    display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+  }
+  .media-stat {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.75rem 1.25rem;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .media-stat-value {
+    font-size: 1.5rem; font-weight: 700; color: var(--vermilion);
+    font-family: var(--font-serif);
+  }
+  .media-stat-label { font-size: 0.7rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+  .media-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    transition: border-color 150ms, transform 150ms;
+    text-decoration: none; color: inherit;
+    display: flex; flex-direction: column;
+  }
+  .media-card:hover { border-color: var(--vermilion); transform: translateY(-2px); }
+  .media-card-poster {
+    aspect-ratio: 2/3; width: 100%; object-fit: cover;
+    background: var(--bg3);
+  }
+  .media-card-poster-placeholder {
+    aspect-ratio: 2/3; width: 100%;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; color: var(--ink-faint);
+  }
+  .media-card-body { padding: 0.6rem 0.7rem; flex: 1; }
+  .media-card-title { font-size: 0.8rem; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 2px; }
+  .media-card-sub { font-size: 0.7rem; color: var(--ink-dim); }
+
+  .media-section-label {
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--vermilion); font-weight: 600; margin-bottom: 0.75rem; margin-top: 2rem;
+  }
+
+  .media-empty {
+    background: var(--bg2); border: 1px dashed var(--border);
+    border-radius: var(--radius); padding: 2rem;
+    text-align: center; color: var(--ink-dim); font-size: 0.875rem;
+  }
+  .media-empty a { color: var(--vermilion); }
+</style>

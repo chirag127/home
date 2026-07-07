@@ -1,0 +1,111 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getLastfmRecentTracks, getLastfmTopArtists, getLastfmTopTracks, getLastfmUserInfo } from '~/lib/media-api'
+
+const [recent, topArtists, topTracks, userInfo] = await Promise.all([
+  getLastfmRecentTracks(20),
+  getLastfmTopArtists('1month', 16),
+  getLastfmTopTracks('1month', 16),
+  getLastfmUserInfo(),
+])
+
+const nowPlaying = recent[0]?.['@attr']?.nowplaying ? recent[0] : null
+const totalScrobbles = (userInfo as any)?.playcount ?? '—'
+const lastfmUrl = `https://www.last.fm/user/${import.meta.env.LASTFM_USERNAME ?? 'chirag127'}`
+---
+
+<MediaLayout title="Music" description="What I've been listening to — Last.fm scrobbles." activeRoute="/me/music/">
+
+  <h1 class="media-page-title">Music</h1>
+  <p class="media-page-subtitle">Last.fm scrobbles · auto-updated on deploy</p>
+
+  <!-- Stats -->
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{Number(totalScrobbles).toLocaleString()}</span>
+      <span class="media-stat-label">total scrobbles</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{topArtists.length ? topArtists[0].name : '—'}</span>
+      <span class="media-stat-label">top artist this month</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{topTracks.length ? topTracks[0].name.slice(0, 18) : '—'}</span>
+      <span class="media-stat-label">top track this month</span>
+    </div>
+  </div>
+
+  <!-- Now playing -->
+  {nowPlaying && (
+    <div style="background:var(--bg2);border:1px solid var(--vermilion);border-radius:var(--radius);padding:0.875rem 1.1rem;margin-bottom:2rem;display:flex;align-items:center;gap:0.875rem">
+      <span style="color:var(--vermilion);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;white-space:nowrap">▶ Playing</span>
+      {nowPlaying.image?.[2]?.['#text'] && <img src={nowPlaying.image[2]['#text']} alt="" width="44" height="44" style="border-radius:6px" />}
+      <div>
+        <div style="font-weight:600;color:var(--ink)">{nowPlaying.name}</div>
+        <div style="font-size:0.8rem;color:var(--ink-dim)">{nowPlaying.artist['#text']} · {nowPlaying.album?.['#text']}</div>
+      </div>
+    </div>
+  )}
+
+  <!-- Top artists -->
+  <p class="media-section-label">Top artists · this month</p>
+  {topArtists.length === 0
+    ? <div class="media-empty">No data yet — <a href={lastfmUrl} rel="noopener">check Last.fm</a> to start scrobbling.</div>
+    : (
+      <div class="media-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));margin-bottom:2rem">
+        {topArtists.map((a) => (
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            {a.image?.[2]?.['#text']
+              ? <img src={a.image[2]['#text']} alt={a.name} width="120" height="120" style="width:100%;aspect-ratio:1;object-fit:cover" />
+              : <div style="width:100%;aspect-ratio:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--ink-faint)">♪</div>
+            }
+            <div style="padding:0.5rem 0.6rem">
+              <div style="font-size:0.8rem;font-weight:600;color:var(--ink)">{a.name}</div>
+              <div style="font-size:0.7rem;color:var(--ink-dim)">{Number(a.playcount).toLocaleString()} plays</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- Top tracks -->
+  <p class="media-section-label">Top tracks · this month</p>
+  {topTracks.length === 0
+    ? <div class="media-empty">No track data.</div>
+    : (
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:2rem">
+        {topTracks.map((t, i) => (
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.875rem;display:flex;align-items:center;gap:0.75rem">
+            <span style="font-size:0.8rem;color:var(--ink-faint);width:1.5rem;text-align:right">{i+1}</span>
+            {t.image?.[1]?.['#text'] && <img src={t.image[1]['#text']} alt="" width="32" height="32" style="border-radius:4px" />}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{t.name}</div>
+              <div style="font-size:0.75rem;color:var(--ink-dim)">{t.artist?.['#text']}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- Recent -->
+  <p class="media-section-label">Recent scrobbles</p>
+  <div style="display:flex;flex-direction:column;gap:4px">
+    {recent.filter((t) => !t['@attr']?.nowplaying).slice(0, 10).map((t) => (
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.875rem;display:flex;align-items:center;gap:0.75rem">
+        {t.image?.[1]?.['#text'] && <img src={t.image[1]['#text']} alt="" width="28" height="28" style="border-radius:3px" />}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.82rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{t.name}</div>
+          <div style="font-size:0.72rem;color:var(--ink-dim)">{t.artist?.['#text']}</div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--ink-faint);white-space:nowrap">{t.date?.['#text'] ?? 'now'}</div>
+      </div>
+    ))}
+  </div>
+
+  <p style="margin-top:1.5rem;font-size:0.8rem;color:var(--ink-faint)">
+    Full history on <a href={lastfmUrl} rel="noopener" style="color:var(--vermilion)">Last.fm →</a>
+  </p>
+
+</MediaLayout>

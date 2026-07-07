@@ -1,0 +1,76 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getMALMangaList } from '~/lib/media-api'
+
+const [reading, completed, planToRead] = await Promise.all([
+  getMALMangaList('reading', 30),
+  getMALMangaList('completed', 40),
+  getMALMangaList('plan_to_read', 20),
+])
+---
+
+<MediaLayout title="Manga" description="Manga I read, tracked on MyAnimeList." activeRoute="/me/manga/">
+
+  <h1 class="media-page-title">Manga</h1>
+  <p class="media-page-subtitle">MyAnimeList · auto-updated on deploy</p>
+
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{reading.length}</span>
+      <span class="media-stat-label">reading</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{completed.length}</span>
+      <span class="media-stat-label">completed</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{planToRead.length}</span>
+      <span class="media-stat-label">plan to read</span>
+    </div>
+  </div>
+
+  {reading.length > 0 && (
+    <>
+      <p class="media-section-label">Currently reading</p>
+      <div class="media-grid" style="margin-bottom:2.5rem">
+        {reading.map((m) => (
+          <a href={`https://myanimelist.net/manga/${m.node.id}`} rel="noopener" target="_blank" class="media-card">
+            {m.node.main_picture?.medium
+              ? <img src={m.node.main_picture.medium} alt={m.node.title} class="media-card-poster" />
+              : <div class="media-card-poster-placeholder">⊕</div>
+            }
+            <div class="media-card-body">
+              <div class="media-card-title">{m.node.title}</div>
+              {m.list_status.score > 0 && <div class="media-card-sub">★ {m.list_status.score}/10</div>}
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {completed.length > 0 && (
+    <>
+      <p class="media-section-label">Completed</p>
+      <div class="media-grid">
+        {completed.slice(0, 40).map((m) => (
+          <a href={`https://myanimelist.net/manga/${m.node.id}`} rel="noopener" target="_blank" class="media-card">
+            {m.node.main_picture?.medium
+              ? <img src={m.node.main_picture.medium} alt={m.node.title} class="media-card-poster" />
+              : <div class="media-card-poster-placeholder">⊕</div>
+            }
+            <div class="media-card-body">
+              <div class="media-card-title">{m.node.title}</div>
+              {m.list_status.score > 0 && <div class="media-card-sub">★ {m.list_status.score}/10</div>}
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {completed.length === 0 && reading.length === 0 && (
+    <div class="media-empty">No manga data yet. Set <code style="color:var(--vermilion)">MAL_USERNAME</code> and <code style="color:var(--vermilion)">MAL_CLIENT_ID</code> in CF Pages env vars.</div>
+  )}
+
+</MediaLayout>

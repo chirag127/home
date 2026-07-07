@@ -1,0 +1,80 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getMALAnimeList } from '~/lib/media-api'
+
+const [watching, completed, planToWatch] = await Promise.all([
+  getMALAnimeList('watching', 30),
+  getMALAnimeList('completed', 40),
+  getMALAnimeList('plan_to_watch', 20),
+])
+---
+
+<MediaLayout title="Anime" description="Anime I watch, tracked on MyAnimeList." activeRoute="/me/anime/">
+
+  <h1 class="media-page-title">Anime</h1>
+  <p class="media-page-subtitle">MyAnimeList · auto-updated on deploy</p>
+
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{watching.length}</span>
+      <span class="media-stat-label">watching</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{completed.length}</span>
+      <span class="media-stat-label">completed</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{planToWatch.length}</span>
+      <span class="media-stat-label">plan to watch</span>
+    </div>
+  </div>
+
+  {watching.length > 0 && (
+    <>
+      <p class="media-section-label">Currently watching</p>
+      <div class="media-grid" style="margin-bottom:2.5rem">
+        {watching.map((a) => (
+          <a href={`https://myanimelist.net/anime/${a.node.id}`} rel="noopener" target="_blank" class="media-card">
+            {a.node.main_picture?.medium
+              ? <img src={a.node.main_picture.medium} alt={a.node.title} class="media-card-poster" />
+              : <div class="media-card-poster-placeholder">⊛</div>
+            }
+            <div class="media-card-body">
+              <div class="media-card-title">{a.node.title}</div>
+              <div class="media-card-sub">Ep {a.list_status.num_episodes_watched}/{a.node.num_episodes ?? '?'}</div>
+              {a.list_status.score > 0 && <div class="media-card-sub">★ {a.list_status.score}/10</div>}
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {completed.length > 0 && (
+    <>
+      <p class="media-section-label">Completed</p>
+      <div class="media-grid" style="margin-bottom:2.5rem">
+        {completed.slice(0, 40).map((a) => (
+          <a href={`https://myanimelist.net/anime/${a.node.id}`} rel="noopener" target="_blank" class="media-card">
+            {a.node.main_picture?.medium
+              ? <img src={a.node.main_picture.medium} alt={a.node.title} class="media-card-poster" />
+              : <div class="media-card-poster-placeholder">⊛</div>
+            }
+            <div class="media-card-body">
+              <div class="media-card-title">{a.node.title}</div>
+              {a.list_status.score > 0 && <div class="media-card-sub">★ {a.list_status.score}/10</div>}
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {completed.length === 0 && watching.length === 0 && (
+    <div class="media-empty">
+      No anime data yet. Add your MAL username and Client ID to CF Pages env vars:<br />
+      <code style="color:var(--vermilion)">MAL_USERNAME</code> · <code style="color:var(--vermilion)">MAL_CLIENT_ID</code>
+    </div>
+  )}
+
+</MediaLayout>

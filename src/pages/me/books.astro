@@ -1,0 +1,80 @@
+---
+import MediaLayout from '~/layouts/MediaLayout.astro'
+import { getGoodreadsShelf } from '~/lib/media-api'
+
+const [currentlyReading, read, wantToRead] = await Promise.all([
+  getGoodreadsShelf('currently-reading'),
+  getGoodreadsShelf('read'),
+  getGoodreadsShelf('to-read'),
+])
+---
+
+<MediaLayout title="Books" description="Books I'm reading and have read." activeRoute="/me/books/">
+
+  <h1 class="media-page-title">Books</h1>
+  <p class="media-page-subtitle">Goodreads shelves · auto-updated on deploy</p>
+
+  <div class="media-stat-row">
+    <div class="media-stat">
+      <span class="media-stat-value">{currentlyReading.length}</span>
+      <span class="media-stat-label">reading now</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{read.length}</span>
+      <span class="media-stat-label">read</span>
+    </div>
+    <div class="media-stat">
+      <span class="media-stat-value">{wantToRead.length}</span>
+      <span class="media-stat-label">want to read</span>
+    </div>
+  </div>
+
+  {currentlyReading.length > 0 && (
+    <>
+      <p class="media-section-label">Currently reading</p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem">
+        {currentlyReading.map((b) => (
+          <a href={b.link} rel="noopener" target="_blank" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:0.875rem 1rem;display:flex;gap:0.875rem;text-decoration:none;color:inherit;transition:border-color 150ms" onmouseenter="this.style.borderColor='var(--vermilion)'" onmouseleave="this.style.borderColor='var(--border)'">
+            {b.cover
+              ? <img src={b.cover} alt={b.title} width="48" height="64" style="object-fit:cover;border-radius:4px;flex-shrink:0" />
+              : <div style="width:48px;height:64px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);flex-shrink:0">⊞</div>
+            }
+            <div>
+              <div style="font-family:var(--font-serif);font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:3px">{b.title}</div>
+              <div style="font-size:0.8rem;color:var(--ink-dim)">{b.author}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {read.length > 0 && (
+    <>
+      <p class="media-section-label">Recently read</p>
+      <div class="media-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));margin-bottom:2rem">
+        {read.slice(0, 20).map((b) => (
+          <a href={b.link} rel="noopener" target="_blank" class="media-card">
+            {b.cover
+              ? <img src={b.cover} alt={b.title} class="media-card-poster" />
+              : <div class="media-card-poster-placeholder">⊞</div>
+            }
+            <div class="media-card-body">
+              <div class="media-card-title">{b.title}</div>
+              <div class="media-card-sub">{b.author}</div>
+              {b.rating && b.rating !== '0' && <div class="media-card-sub">{'★'.repeat(+b.rating)}</div>}
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  {currentlyReading.length === 0 && read.length === 0 && (
+    <div class="media-empty">
+      No book data yet. Set <code style="color:var(--vermilion)">GOODREADS_USER_ID</code> in CF Pages env vars.<br />
+      Find your user ID at goodreads.com/user/show/YOUR_ID.
+    </div>
+  )}
+
+</MediaLayout>
