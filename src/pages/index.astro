@@ -1,425 +1,314 @@
 ---
-import FeaturePanel from '~/components/FeaturePanel.astro'
 /*
- * oriz / home — index page (v0 locked design 2026-06-22).
+ * chirag127 / home — index page (hub redesign 2026-07-08).
  *
- * Sections in order per the brief:
- *   1. Hero        — MASSIVE animated wordmark (Fraunces, 12rem clamp) + tagline
- *                    + family-wide unified search bar (UI only, no live search yet).
- *   2. /apps       — 5 cards (home, blog, ncert, janaushdhi, packages).
- *   3. /tools      — 16 tool subdomains (slug + domain), 4-col compact grid.
- *   4. /books      — 5 placeholder books, "Coming soon".
- *   5. /packages   — 23 @chirag127/*-npm-pkg slugs (4-col grid → npm.im links).
- *   6. /me         — single card → me.oriz.in.
+ * Sections:
+ *   1. Hero / Bio    — name, role, stats, CTA buttons
+ *   2. Sites         — all live oriz.in subdomains as cards
+ *   3. API fleet     — 16 endpoints as a grid
+ *   4. Packages      — 17 @chirag127/* npm packages
  *
- * Chrome = "full" → Header, Footer, Sidebar (drawer), BottomBar all render.
- * Tokens overridden in ~/styles/tokens.css (paper #F8F4ED + vermilion #E0492F).
- *
- * The wordmark wave animation uses Motion One (`motion`) with respect for
- * prefers-reduced-motion. Letters fade-in + wave through font-weight 300→900.
+ * Design: MD3 dark — #0F0D13 bg, #D0BCFF primary, Google Sans typography.
+ * CSS: standalone CSS custom properties, no Tailwind classes.
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
 
-/* ── 2 · Apps ────────────────────────────────────────────────────────── */
-const APP_CARDS = [
+/* ── 2 · Sites ───────────────────────────────────────────────────────── */
+const SITES = [
   {
-    name: 'Home',
-    desc: 'Family hub — every Oriz app in one place.',
-    host: 'oriz.in',
-    url: 'https://oriz.in',
+    name: 'me.oriz.in',
+    desc: 'Personal OS — lifestream, now-page, uses, CV, contact.',
+    url: 'https://me.oriz.in',
   },
   {
-    name: 'Blog',
-    desc: 'Long-form essays on engineering, finance, books.',
-    host: 'blog.oriz.in',
+    name: 'blog.oriz.in',
+    desc: 'Long-form essays on engineering, finance, and books.',
     url: 'https://blog.oriz.in',
   },
   {
-    name: 'NCERT',
-    desc: 'Free NCERT textbook directory — class · subject · language.',
-    host: 'books.oriz.in',
+    name: 'books.oriz.in',
+    desc: 'Free NCERT textbook directory — class, subject, language.',
     url: 'https://books.oriz.in',
   },
   {
-    name: 'Janaushdhi',
+    name: 'janaushdhi.oriz.in',
     desc: 'PMBJP generic-medicine catalog — search, compare, locate.',
-    host: 'janaushdhi.oriz.in',
     url: 'https://janaushdhi.oriz.in',
   },
   {
-    name: 'Packages',
-    desc: 'Catalog of every @chirag127/* npm package.',
-    host: 'packages.oriz.in',
-    url: 'https://packages.oriz.in',
+    name: 'pkg-md3-tokens.oriz.in',
+    desc: 'MD3 design-system token reference and explorer.',
+    url: 'https://pkg-md3-tokens.oriz.in',
+  },
+  {
+    name: 'pkg-astro-seo.oriz.in',
+    desc: 'Astro SEO component docs and playground.',
+    url: 'https://pkg-astro-seo.oriz.in',
+  },
+  {
+    name: 'pkg-astro-analytics.oriz.in',
+    desc: 'Astro analytics integration docs.',
+    url: 'https://pkg-astro-analytics.oriz.in',
+  },
+  {
+    name: 'pkg-astro-chrome.oriz.in',
+    desc: 'Astro app shell (header, footer, sidebar) docs.',
+    url: 'https://pkg-astro-chrome.oriz.in',
+  },
+  {
+    name: 'pkg-astro-shell.oriz.in',
+    desc: 'Astro shell token system docs.',
+    url: 'https://pkg-astro-shell.oriz.in',
   },
 ]
 
-/* ── 3 · Tools ───────────────────────────────────────────────────────── */
-const TOOL_LIST = [
-  { slug: 'slice-pdf', host: 'pdf.oriz.in' },
-  { slug: 'pixie-image', host: 'image.oriz.in' },
-  { slug: 'scribe-text', host: 'text.oriz.in' },
-  { slug: 'grid-qr', host: 'qr.oriz.in' },
-  { slug: 'paisa-finance', host: 'finance.oriz.in' },
-  { slug: 'forge-dev', host: 'dev.oriz.in' },
-  { slug: 'shift-convert', host: 'convert.oriz.in' },
-  { slug: 'dice-random', host: 'random.oriz.in' },
-  { slug: 'cipher-crypto', host: 'crypto.oriz.in' },
-  { slug: 'paper-print', host: 'print.oriz.in' },
-  { slug: 'vitals-health', host: 'health.oriz.in' },
-  { slug: 'rank-seo', host: 'seo.oriz.in' },
-  { slug: 'reel-video', host: 'video.oriz.in' },
-  { slug: 'echo-audio', host: 'audio.oriz.in' },
-  { slug: 'pivot-data', host: 'data.oriz.in' },
-  { slug: 'tbd-16', host: 'tbd.oriz.in' },
+/* ── 3 · API fleet ───────────────────────────────────────────────────── */
+const APIS = [
+  { slug: 'rto', host: 'api-rto.oriz.in', desc: 'RTO vehicle registration data' },
+  { slug: 'constants', host: 'api-constants.oriz.in', desc: 'Indian constants and reference values' },
+  { slug: 'dynasties', host: 'api-dynasties.oriz.in', desc: 'Indian dynasties and historical data' },
+  { slug: 'countries-plus', host: 'api-countries-plus.oriz.in', desc: 'Country data with India-focused extras' },
+  { slug: 'ragas', host: 'api-ragas.oriz.in', desc: 'Hindustani and Carnatic raga database' },
+  { slug: 'air-quality', host: 'api-air-quality.oriz.in', desc: 'Live AQI for Indian cities' },
+  { slug: 'currency-rates', host: 'api-currency-rates.oriz.in', desc: 'Live currency exchange rates' },
+  { slug: 'fii-dii', host: 'api-fii-dii.oriz.in', desc: 'FII and DII daily investment data' },
+  { slug: 'gold-silver', host: 'api-gold-silver.oriz.in', desc: 'Live gold and silver prices (India)' },
+  { slug: 'ifsc', host: 'api-ifsc.oriz.in', desc: 'IFSC code lookup for Indian bank branches' },
+  { slug: 'budget', host: 'api-budget.oriz.in', desc: 'Union Budget allocations and data' },
+  { slug: 'holidays', host: 'api-holidays.oriz.in', desc: 'Indian public holidays by state and year' },
+  { slug: 'petrol-diesel', host: 'api-petrol-diesel.oriz.in', desc: 'Daily petrol and diesel prices by city' },
+  { slug: 'train-schedules', host: 'api-train-schedules.oriz.in', desc: 'Indian Railways train schedules' },
+  { slug: 'weather', host: 'api-weather.oriz.in', desc: 'Current weather for Indian cities' },
+  { slug: 'mmi-tickertape', host: 'api-mmi-tickertape.oriz.in', desc: 'Market Mood Index and Tickertape data' },
 ]
 
-/* ── 4 · Books ───────────────────────────────────────────────────────── */
-const BOOKS = [
-  { title: 'The Stack', author: 'Chirag Singhal' },
-  { title: 'Paisa', author: 'Chirag Singhal' },
-  { title: 'PDF: A Field Guide', author: 'Chirag Singhal' },
-  { title: 'Janaushdhi', author: 'Chirag Singhal' },
-  { title: 'Me', author: 'Chirag Singhal' },
-]
-
-/* ── 5 · Packages ─────────────────────────────────────────────────────
- * 23 @chirag127/*-npm-pkg slugs — the npm scope drops the trailing `-npm-pkg`.
- * Mirrors c:/D/oriz/projects/npm-packages.
- * ──────────────────────────────────────────────────────────────────── */
-const PKG_SLUGS = [
-  'astro-billing',
-  'astro-chrome',
-  'astro-content',
-  'astro-data',
-  'astro-distribute',
-  'astro-forms',
-  'astro-pwa',
-  'astro-shell',
-  'astro-test-utils',
-  'astro-tools',
-  'astro-widgets',
-  'auth-cli',
-  'auth-core',
-  'auth-vsc',
-  'auth-wxt',
-  'omni-publish',
-  'oriz-ai-providers',
-  'oriz-analytics',
-  'oriz-book-build',
-  'oriz-consent',
-  'oriz-rate-limit',
-  'oriz-seo',
-  'oriz-ui',
+/* ── 4 · Packages ─────────────────────────────────────────────────────
+ * 17 @chirag127/* npm packages with pkg-*.oriz.in landing pages.
+ * ─────────────────────────────────────────────────────────────────── */
+const PACKAGES = [
+  { slug: 'md3-tokens', pkgSite: 'pkg-md3-tokens.oriz.in' },
+  { slug: 'astro-seo', pkgSite: 'pkg-astro-seo.oriz.in' },
+  { slug: 'astro-analytics', pkgSite: 'pkg-astro-analytics.oriz.in' },
+  { slug: 'astro-chrome', pkgSite: 'pkg-astro-chrome.oriz.in' },
+  { slug: 'astro-shell', pkgSite: 'pkg-astro-shell.oriz.in' },
+  { slug: 'astro-billing', pkgSite: 'pkg-astro-billing.oriz.in' },
+  { slug: 'astro-content', pkgSite: 'pkg-astro-content.oriz.in' },
+  { slug: 'astro-data', pkgSite: 'pkg-astro-data.oriz.in' },
+  { slug: 'astro-forms', pkgSite: 'pkg-astro-forms.oriz.in' },
+  { slug: 'astro-pwa', pkgSite: 'pkg-astro-pwa.oriz.in' },
+  { slug: 'astro-tools', pkgSite: 'pkg-astro-tools.oriz.in' },
+  { slug: 'astro-widgets', pkgSite: 'pkg-astro-widgets.oriz.in' },
+  { slug: 'auth-core', pkgSite: 'pkg-auth-core.oriz.in' },
+  { slug: 'omni-publish', pkgSite: 'pkg-omni-publish.oriz.in' },
+  { slug: 'ai-providers', pkgSite: 'pkg-ai-providers.oriz.in' },
+  { slug: 'seo', pkgSite: 'pkg-seo.oriz.in' },
+  { slug: 'rate-limit', pkgSite: 'pkg-rate-limit.oriz.in' },
 ]
 ---
 
 <BaseLayout
-  title="Oriz — a family of free-forever apps, tools, books, and packages"
-  description="Oriz is a self-built family of free apps, tools, content sites, books, and open-source packages by Chirag Singhal. One sign-in, one design system, one knowledge base."
+  title="Chirag Singhal — Software Engineer, oriz.in"
+  description="Chirag Singhal — Software Engineer at TCS. 353+ repos, 192+ tools, open-source packages and free APIs."
   sidebar={false}
 >
-  <article class="home spine">
-    {/* ── 1 · Hero + Feature panel (2-col on desktop, stacked on mobile) ── */}
-    <section class="hero-row" aria-label="Oriz family">
-      <div class="hero">
-        <h1 class="wm" aria-label="oriz">
-          <span class="wm-letter" data-i="0">o</span><span
-            class="wm-letter" data-i="1">r</span><span class="wm-letter" data-i="2">i</span><span
-            class="wm-letter wm-z" data-i="3">z</span>
-        </h1>
-        <p class="tagline">
-          A self-built family of <em>free tools, content, and books</em>.
-          <br />
-          <span class="tagline-mute">For developers, the curious, and everyone in between.</span>
-        </p>
-        <form class="search" role="search" onsubmit="event.preventDefault()">
-          <label class="visually-hidden" for="oriz-search">Search the Oriz family</label>
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input
-            id="oriz-search"
-            type="search"
-            autocomplete="off"
-            placeholder="Search apps, books, packages…"
-          />
-          <kbd class="search-kbd" aria-hidden="true">/</kbd>
-        </form>
+  <article class="hub spine">
+
+    {/* ── 1 · Hero / Bio ──────────────────────────────────────────────── */}
+    <section class="hero" aria-label="Bio">
+      <div class="hero-inner">
+        <p class="hero-eyebrow">Software Engineer</p>
+        <h1 class="hero-name">Chirag Singhal</h1>
+        <p class="hero-role">@ TCS &middot; Available for opportunities</p>
+        <ul class="hero-stats" aria-label="Stats">
+          <li class="stat-chip"><span class="stat-n">353+</span><span class="stat-l">repos</span></li>
+          <li class="stat-chip"><span class="stat-n">53h</span><span class="stat-l">/week coding</span></li>
+          <li class="stat-chip"><span class="stat-n">192+</span><span class="stat-l">tools</span></li>
+          <li class="stat-chip"><span class="stat-n">16</span><span class="stat-l">free APIs</span></li>
+        </ul>
+        <div class="hero-ctas">
+          <a class="cta-primary" href="https://me.oriz.in">me.oriz.in &rarr;</a>
+          <a class="cta-secondary" href="https://github.com/chirag127">github.com/chirag127 &rarr;</a>
+        </div>
       </div>
-      <FeaturePanel />
     </section>
 
-    {/* ── 2 · Apps ─────────────────────────────────────────────────── */}
-    <section class="block" id="apps">
+    {/* ── 2 · Sites directory ─────────────────────────────────────────── */}
+    <section class="block" id="sites">
       <header class="block-h">
-        <h2>Apps</h2>
-        <a class="block-more" href="/apps/">All apps →</a>
+        <h2>Sites</h2>
       </header>
-      <ul class="apps-grid">
-        {APP_CARDS.map((a) => (
-          <li class="app-card">
-            <a href={a.url}>
-              <h3 class="app-name">{a.name}</h3>
-              <p class="app-desc">{a.desc}</p>
-              <span class="app-host">{a.host}</span>
-              <span class="app-open">Open ↗</span>
+      <ul class="sites-grid">
+        {SITES.map((s) => (
+          <li>
+            <a class="site-card" href={s.url}>
+              <span class="site-name">{s.name}</span>
+              <span class="site-desc">{s.desc}</span>
+              <span class="site-open">Open &nearr;</span>
             </a>
           </li>
         ))}
       </ul>
     </section>
 
-    {/* ── 3 · Tools ────────────────────────────────────────────────── */}
-    <section class="block" id="tools">
+    {/* ── 3 · API fleet ───────────────────────────────────────────────── */}
+    <section class="block" id="apis">
       <header class="block-h">
-        <h2>Tools</h2>
-        <a class="block-more" href="/tools/">All tools →</a>
+        <h2>API fleet</h2>
+        <span class="block-count">16 endpoints</span>
       </header>
-      <ul class="tools-grid">
-        {TOOL_LIST.map((t) => (
-          <li class="tool-cell">
-            <a href={`https://${t.host}`}>
-              <span class="tool-slug">{t.slug}</span>
-              <span class="tool-host">{t.host}</span>
+      <ul class="api-grid">
+        {APIS.map((a) => (
+          <li>
+            <a class="api-card" href={`https://${a.host}`}>
+              <span class="api-slug">{a.slug}</span>
+              <span class="api-host">{a.host}</span>
+              <span class="api-desc">{a.desc}</span>
             </a>
           </li>
         ))}
       </ul>
     </section>
 
-    {/* ── 4 · Books ───────────────────────────────────────────────── */}
-    <section class="block" id="books">
-      <header class="block-h">
-        <h2>Books</h2>
-        <a class="block-more" href="/books/">All books →</a>
-      </header>
-      <ul class="books-grid">
-        {BOOKS.map((b) => (
-          <li class="book-card">
-            <div class="book-cover" aria-hidden="true">
-              <span class="book-cover-title">{b.title}</span>
-            </div>
-            <h3 class="book-title">{b.title}</h3>
-            <p class="book-author">{b.author}</p>
-            <p class="book-status">Coming soon</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-
-    {/* ── 5 · Packages ────────────────────────────────────────────── */}
+    {/* ── 4 · Packages ────────────────────────────────────────────────── */}
     <section class="block" id="packages">
       <header class="block-h">
-        <h2>Packages</h2>
-        <a class="block-more" href="https://packages.oriz.in">All packages →</a>
+        <h2>npm packages</h2>
+        <span class="block-count">@chirag127 &middot; 17 packages</span>
       </header>
       <ul class="pkg-grid">
-        {PKG_SLUGS.map((s) => (
-          <li class="pkg-cell">
-            <a href={`https://npm.im/@chirag127/${s}`}>
-              <span class="pkg-slug">{s}</span>
-              <span class="pkg-scope">@chirag127</span>
+        {PACKAGES.map((p) => (
+          <li>
+            <a class="pkg-card" href={`https://npm.im/@chirag127/${p.slug}`}>
+              <span class="pkg-name">@chirag127/{p.slug}</span>
+              <span class="pkg-site">{p.pkgSite}</span>
             </a>
           </li>
         ))}
       </ul>
     </section>
 
-    {/* ── 6 · Me ──────────────────────────────────────────────────── */}
-    <section class="block" id="me">
-      <header class="block-h">
-        <h2>Me</h2>
-      </header>
-      <div class="me-grid">
-        <a class="me-card" href="https://me.oriz.in">
-          <h3 class="me-name">Chirag Singhal</h3>
-          <p class="me-desc">
-            Lifestream, now-page, uses, CV, contact. The person behind every Oriz site.
-          </p>
-          <span class="me-host">me.oriz.in</span>
-          <span class="me-open">Open ↗</span>
-        </a>
-      </div>
-    </section>
   </article>
 </BaseLayout>
 
-<script>
-  /*
-   * Wordmark wave — Motion One. weight 300 → 900 across the 4 letters,
-   * staggered 120ms, ~600ms each. Respects prefers-reduced-motion.
-   * Falls back gracefully if motion fails to load (letters render static at weight 700).
-   */
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const letters = document.querySelectorAll<HTMLElement>('.wm-letter')
-
-  if (!reduce && letters.length > 0) {
-    import('motion')
-      .then(({ animate, stagger }) => {
-        animate(
-          letters,
-          {
-            fontWeight: [300, 900, 700],
-            opacity: [0, 1, 1],
-            y: [12, 0, 0],
-          },
-          {
-            duration: 0.9,
-            delay: stagger(0.12),
-            ease: [0.2, 0.7, 0.2, 1],
-          },
-        )
-      })
-      .catch(() => {
-        for (const el of letters) (el as HTMLElement).style.opacity = '1'
-      })
-  } else {
-    for (const el of letters) (el as HTMLElement).style.opacity = '1'
-  }
-
-  /* Slash-key focuses the search bar (Algolia / GitHub convention). */
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== '/') return
-    const target = e.target as HTMLElement | null
-    if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return
-    const input = document.getElementById('oriz-search') as HTMLInputElement | null
-    if (input) {
-      e.preventDefault()
-      input.focus()
-    }
-  })
-</script>
-
 <style>
-  /* ── Visually hidden helper ───────────────────────────────────────── */
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  /* ── Layout ──────────────────────────────────────────────────────── */
+  .hub {
+    padding-block: clamp(2rem, 6vw, 4rem) clamp(3rem, 8vw, 6rem);
   }
 
-  .home {
-    padding-block: clamp(1.5rem, 5vw, 3rem) clamp(3rem, 8vw, 5rem);
-  }
-
-  /* ── 1 · Hero ─────────────────────────────────────────────────────── */
-
-  /*
-   * Desktop: 2-col grid — centered hero on the left, feature panel right.
-   * Mobile (<1024px): single column, panel stacks below hero.
-   */
-  .hero-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: clamp(1.5rem, 3vw, 2.5rem);
-    align-items: start;
-    padding-block: clamp(2rem, 8vw, 5rem) clamp(2rem, 6vw, 4rem);
-  }
-  @media (max-width: 1023px) {
-    .hero-row {
-      grid-template-columns: 1fr;
-    }
-  }
-
+  /* ── 1 · Hero ────────────────────────────────────────────────────── */
   .hero {
-    text-align: center;
-    min-width: 0;
+    padding-block: clamp(3rem, 10vw, 6rem) clamp(2.5rem, 7vw, 4rem);
+    border-bottom: 1px solid var(--md-outline-variant);
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
   }
-  .wm {
-    font-family: var(--font-display);
-    font-size: clamp(5rem, 22vw, 12rem);
-    line-height: 0.9;
-    letter-spacing: -0.04em;
-    margin: 0;
-    color: var(--color-fg);
-    font-feature-settings: 'ss01' 1, 'ss02' 1;
-    display: inline-flex;
-    align-items: baseline;
+  .hero-inner {
+    max-width: 44rem;
   }
-  .wm-letter {
-    display: inline-block;
+  .hero-eyebrow {
+    font-family: var(--md-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--md-primary);
+    margin: 0 0 0.75rem;
+  }
+  .hero-name {
+    font-family: var(--md-font-display);
+    font-size: clamp(2.75rem, 8vw, 5rem);
     font-weight: 700;
-    opacity: 0;
-    will-change: font-weight, opacity, transform;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--md-on-surface);
+    margin: 0 0 0.5rem;
   }
-  .wm-z {
-    position: relative;
-    color: var(--color-accent);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .wm-letter {
-      opacity: 1 !important;
-    }
-  }
-
-  .tagline {
-    font-family: var(--font-display);
-    font-size: clamp(1.125rem, 2.2vw, 1.5rem);
-    line-height: 1.5;
-    margin: clamp(1.5rem, 4vw, 2.25rem) auto 0;
-    max-width: 38rem;
-    color: var(--color-fg);
-  }
-  .tagline em {
-    font-style: italic;
-    color: var(--color-accent);
-  }
-  .tagline-mute {
-    color: var(--color-muted);
-    font-size: 0.95em;
+  .hero-role {
+    font-family: var(--md-font-body);
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--md-on-surface-variant);
+    margin: 0 0 clamp(1.5rem, 4vw, 2rem);
   }
 
-  .search {
+  /* Stats chips */
+  .hero-stats {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 clamp(1.75rem, 4vw, 2.5rem);
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+  .stat-chip {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    max-width: 32rem;
-    margin: clamp(2rem, 5vw, 3rem) auto 0;
-    padding: 0.625rem 0.875rem;
-    background: #fff;
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-    transition: border-color 0.18s, box-shadow 0.18s;
+    gap: 0.125rem;
+    padding: 0.625rem 1.125rem;
+    background: var(--md-surface-container-high);
+    border-radius: var(--md-shape-lg);
+    min-width: 5rem;
   }
-  .search:focus-within {
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent) 14%, transparent);
+  .stat-n {
+    font-family: var(--md-font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--md-primary);
+    line-height: 1;
   }
-  .search-icon {
-    color: var(--color-muted);
-    font-size: 1.1rem;
-  }
-  .search input {
-    flex: 1;
-    background: transparent;
-    border: 0;
-    outline: 0;
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--color-fg);
-    min-width: 0;
-  }
-  .search input::placeholder {
-    color: var(--color-muted);
-  }
-  .search-kbd {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    padding: 0.125rem 0.375rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    color: var(--color-muted);
-    background: var(--color-bg);
+  .stat-l {
+    font-family: var(--md-font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--md-on-surface-variant);
   }
 
-  /* ── Block scaffold ───────────────────────────────────────────────── */
+  /* CTA buttons */
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    border-radius: var(--md-shape-full);
+    font-family: var(--md-font-body);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .cta-primary:hover {
+    opacity: 0.88;
+    text-decoration: none;
+  }
+  .cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    color: var(--md-primary);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-full);
+    font-family: var(--md-font-body);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cta-secondary:hover {
+    background: var(--md-surface-container-high);
+    border-color: var(--md-primary);
+    text-decoration: none;
+  }
+
+  /* ── Section scaffold ────────────────────────────────────────────── */
   .block {
-    margin-block: clamp(3rem, 7vw, 4.5rem);
+    margin-block: clamp(2.5rem, 6vw, 4rem);
   }
   .block-h {
     display: flex;
@@ -428,254 +317,173 @@ const PKG_SLUGS = [
     gap: 1rem;
     margin: 0 0 clamp(1rem, 2.5vw, 1.5rem);
     padding-bottom: 0.625rem;
-    border-bottom: 2px solid var(--color-fg);
+    border-bottom: 1px solid var(--md-outline-variant);
   }
   .block-h h2 {
-    font-family: var(--font-display);
-    font-size: clamp(1.625rem, 3.5vw, 2.25rem);
+    font-family: var(--md-font-display);
+    font-size: clamp(1.375rem, 3vw, 1.875rem);
     font-weight: 600;
     margin: 0;
-    color: var(--color-fg);
-    letter-spacing: -0.02em;
+    color: var(--md-on-surface);
+    letter-spacing: -0.015em;
   }
-  .block-more {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
+  .block-count {
+    font-family: var(--md-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--color-accent);
-    text-decoration: none;
+    color: var(--md-on-surface-variant);
     white-space: nowrap;
   }
-  .block-more:hover {
-    text-decoration: underline;
+
+  /* ── 2 · Sites grid ──────────────────────────────────────────────── */
+  .sites-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+  }
+  .site-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0.375rem;
+    padding: 1.125rem 1.25rem;
+    background: var(--md-surface-container-high);
+    border-radius: var(--md-shape-lg);
+    text-decoration: none;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .site-card:hover {
+    background: var(--md-surface-container-highest);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .site-name {
+    font-family: var(--md-font-body);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--md-primary);
+    word-break: break-all;
+  }
+  .site-desc {
+    font-family: var(--md-font-body);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--md-on-surface-variant);
+  }
+  .site-open {
+    font-family: var(--md-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--md-primary);
+    margin-top: 0.25rem;
   }
 
-  /* ── 2 · Apps grid ───────────────────────────────────────────────── */
-  .apps-grid {
+  /* ── 3 · API grid ────────────────────────────────────────────────── */
+  .api-grid {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.875rem;
+    gap: 0.75rem;
   }
-  .app-card a {
+  .api-card {
     display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 0.5rem;
-    height: 100%;
-    padding: 1.125rem 1.125rem 1rem;
-    background: #fff;
-    border: 1px solid var(--color-border);
-    color: inherit;
+    grid-template-rows: auto auto 1fr;
+    gap: 0.25rem;
+    padding: 1rem 1.125rem;
+    background: var(--md-surface-container);
+    border-radius: var(--md-shape-md);
+    border: 1px solid var(--md-outline-variant);
     text-decoration: none;
-    transition: border-color 0.18s, transform 0.18s;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .app-card a:hover {
-    border-color: var(--color-accent);
-    transform: translateY(-2px);
+  .api-card:hover {
+    border-color: var(--md-primary);
+    background: var(--md-surface-container-high);
+    text-decoration: none;
   }
-  .app-name {
-    font-family: var(--font-display);
+  .api-slug {
+    font-family: var(--md-font-display);
     font-weight: 600;
-    font-size: 1.375rem;
-    margin: 0;
-    color: var(--color-fg);
+    font-size: 1rem;
+    color: var(--md-on-surface);
   }
-  .app-desc {
-    font-family: var(--font-body);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    margin: 0;
-    color: var(--color-muted);
+  .api-host {
+    font-family: var(--md-font-mono);
+    font-size: 0.6875rem;
+    color: var(--md-primary);
+    letter-spacing: 0.02em;
   }
-  .app-host {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    color: var(--color-muted);
-  }
-  .app-open {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    color: var(--color-accent);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+  .api-desc {
+    font-family: var(--md-font-body);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--md-on-surface-variant);
+    margin-top: 0.375rem;
   }
 
-  /* ── 3 · Tools grid (4-col compact) ───────────────────────────────── */
-  .tools-grid,
+  /* ── 4 · Packages grid ───────────────────────────────────────────── */
   .pkg-grid {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--color-border);
-    border: 1px solid var(--color-border);
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.625rem;
   }
-  .tool-cell,
-  .pkg-cell {
-    background: var(--color-bg);
-  }
-  .tool-cell a,
-  .pkg-cell a {
+  .pkg-card {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.875rem 1rem;
-    background: var(--color-bg);
-    color: inherit;
+    background: var(--md-surface-container);
+    border-radius: var(--md-shape-md);
     text-decoration: none;
     transition: background 0.15s;
   }
-  .tool-cell a:hover,
-  .pkg-cell a:hover {
-    background: #fff;
+  .pkg-card:hover {
+    background: var(--md-surface-container-high);
+    text-decoration: none;
   }
-  .tool-cell a:hover .tool-slug,
-  .pkg-cell a:hover .pkg-slug {
-    color: var(--color-accent);
-  }
-  .tool-slug,
-  .pkg-slug {
-    font-family: var(--font-body);
+  .pkg-name {
+    font-family: var(--md-font-mono);
+    font-size: 0.8125rem;
+    color: var(--md-on-surface);
     font-weight: 500;
-    font-size: 0.9375rem;
-    color: var(--color-fg);
   }
-  .tool-host,
-  .pkg-scope {
-    font-family: var(--font-utility);
-    font-size: 0.6875rem;
-    color: var(--color-muted);
+  .pkg-site {
+    font-family: var(--md-font-mono);
+    font-size: 0.625rem;
+    color: var(--md-primary);
     letter-spacing: 0.02em;
   }
 
-  /* ── 4 · Books grid ──────────────────────────────────────────────── */
-  .books-grid {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1.5rem;
-  }
-  .book-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-  .book-cover {
-    aspect-ratio: 2 / 3;
-    width: 100%;
-    background:
-      radial-gradient(120% 80% at 30% 20%, color-mix(in oklab, var(--color-ochre) 50%, var(--color-accent)) 0%, var(--color-accent) 70%);
-    border: 1px solid var(--color-border);
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-start;
-    padding: 0.875rem;
-    color: #fff;
-    margin-bottom: 0.5rem;
-  }
-  .book-cover-title {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1.125rem;
-    line-height: 1.15;
-  }
-  .book-title {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1.0625rem;
-    margin: 0;
-    color: var(--color-fg);
-  }
-  .book-author {
-    font-family: var(--font-body);
-    font-size: 0.875rem;
-    color: var(--color-muted);
-    margin: 0;
-  }
-  .book-status {
-    font-family: var(--font-utility);
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-accent);
-    margin: 0;
-  }
-
-  /* ── 6 · Me grid ─────────────────────────────────────────────────── */
-  .me-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 28rem);
-    gap: 1rem;
-  }
-  .me-card {
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 0.5rem;
-    padding: 1.5rem;
-    background: var(--color-fg);
-    color: var(--color-bg);
-    text-decoration: none;
-    transition: transform 0.18s;
-  }
-  .me-card:hover {
-    transform: translateY(-2px);
-  }
-  .me-name {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1.5rem;
-    margin: 0;
-    color: var(--color-bg);
-  }
-  .me-desc {
-    font-family: var(--font-body);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    margin: 0;
-    color: color-mix(in oklab, var(--color-bg) 80%, var(--color-fg));
-  }
-  .me-host {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    color: color-mix(in oklab, var(--color-bg) 70%, var(--color-fg));
-  }
-  .me-open {
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-accent);
-  }
-
   /* ── Responsive ──────────────────────────────────────────────────── */
-  @media (max-width: 1024px) {
-    .tools-grid,
-    .pkg-grid {
-      grid-template-columns: repeat(3, 1fr);
+  @media (max-width: 600px) {
+    .hero-stats {
+      gap: 0.5rem;
     }
-  }
-  @media (max-width: 768px) {
-    .tools-grid,
+    .stat-chip {
+      padding: 0.5rem 0.875rem;
+      min-width: 4rem;
+    }
+    .api-grid,
     .pkg-grid {
       grid-template-columns: repeat(2, 1fr);
     }
-    .block-h {
+  }
+  @media (max-width: 400px) {
+    .api-grid,
+    .pkg-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-ctas {
       flex-direction: column;
-      align-items: flex-start;
-      gap: 0.375rem;
-    }
-  }
-  @media (max-width: 480px) {
-    .books-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
     }
   }
 </style>
