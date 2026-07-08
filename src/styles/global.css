@@ -278,42 +278,29 @@
 
 /*
  * ── home-bare ───────────────────────────────────────────────────────────
- * Alphabet-style (abc.xyz) variant for the parent-company landing page.
- * Activated only when <body class="home-bare">. White paper, near-black
- * ink, single accent for links, generous serif at all sizes. The other
- * pages (about / sites / legal / account / contact / support / privacy)
- * keep the broadsheet-almanac dark theme above.
- *
- * Token overrides scoped to body.home-bare so nothing else is affected.
+ * MD3 dark variant for the parent-company landing page.
+ * Activated when <body class="home-bare">. Uses MD3 dark tokens.
  */
 body.home-bare {
-  color-scheme: light;
-  --paper: #FFFBFE;
-  --paper-deep: #F7F2FA;
-  --ink: #1C1B1F;
-  --ink-mute: #49454F;
-  --rule: #CAC4D0;
-  --accent: #6750A4; /* MD3 primary on light */
-
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-display); /* serif everywhere on this page */
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font-family: var(--md-font-display);
   font-size: 17px;
   line-height: 1.6;
 }
 
 body.home-bare a {
-  color: var(--accent);
+  color: var(--md-primary);
   text-decoration: none;
 }
 body.home-bare a:hover {
   text-decoration: underline;
 }
 body.home-bare a:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--md-primary);
   outline-offset: 2px;
 }
 body.home-bare ::selection {
-  background: color-mix(in oklab, var(--accent) 25%, transparent);
-  color: var(--ink);
+  background: color-mix(in oklab, var(--md-primary) 25%, transparent);
+  color: var(--md-on-surface);
 }

@@ -15,7 +15,12 @@
   --md-surface-container-low:   #1D1B20;
   --md-surface-container:       #211F26;
   --md-surface-container-high:  #2B2930;
+  --md-surface-container-highest: #36343B;
   --md-primary:                 #D0BCFF;
+  --md-on-primary:                #381E72;
+  --md-primary-container:         #4F378B;
+  --md-on-primary-container:      #EADDFF;
+  --md-secondary:                 #CCC2DC;
   --md-on-surface:              #E6E1E5;
   --md-on-surface-variant:      #CAC4D0;
   --md-outline-variant:         #49454F;
