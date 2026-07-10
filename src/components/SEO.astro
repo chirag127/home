@@ -1,0 +1,27 @@
+---
+interface Props {
+  title: string
+  description?: string
+  canonical?: string
+  ogImage?: string
+  ogType?: string
+  twitterHandle?: string
+  noindex?: boolean
+  jsonLd?: Record<string, unknown>
+}
+const { title, description='', canonical='', ogImage='', ogType='website', twitterHandle='', noindex=false, jsonLd } = Astro.props
+---
+<title>{title}</title>
+{description && <meta name="description" content={description} />}
+{noindex && <meta name="robots" content="noindex" />}
+{canonical && <link rel="canonical" href={canonical} />}
+<meta property="og:title" content={title} />
+{description && <meta property="og:description" content={description} />}
+<meta property="og:type" content={ogType} />
+{canonical && <meta property="og:url" content={canonical} />}
+{ogImage && <meta property="og:image" content={ogImage} />}
+<meta name="twitter:card" content="summary" />
+{twitterHandle && <meta name="twitter:creator" content={twitterHandle} />}
+<meta name="twitter:title" content={title} />
+{description && <meta name="twitter:description" content={description} />}
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
