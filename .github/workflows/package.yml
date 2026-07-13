@@ -1,6 +1,6 @@
 # Package installable app artifacts and attach them to the prerelease.
 # Android: TWA via Bubblewrap (unsigned AAB/APK). Windows: Tauri NSIS/MSI
-# (unsigned). Both target https://home.oriz.in. No signing keys are generated
+# (unsigned). Both target the live Cloudflare Pages URL. No signing keys are generated
 # or committed — artifacts are UNSIGNED. Signing is a manual release step.
 name: package
 
@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 env:
-  APP_URL: https://home.oriz.in
+  APP_URL: https://oriz-home.pages.dev
 
 jobs:
   android-twa:
@@ -81,7 +81,7 @@ jobs:
             "productName": "Oriz",
             "version": "0.0.1",
             "identifier": "in.oriz.home",
-            "build": { "frontendDist": "https://home.oriz.in" },
+            "build": { "frontendDist": "https://oriz-home.pages.dev" },
             "app": {
               "windows": [{ "title": "Oriz", "width": 1200, "height": 800 }]
             },
